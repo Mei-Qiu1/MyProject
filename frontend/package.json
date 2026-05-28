@@ -1,0 +1,22 @@
+{
+  "name": "hospital-drug-frontend",
+  "version": "1.0.0",
+  "description": "医院药品管理系统前端",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.6.7",
+    "element-plus": "^2.6.1",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.1.6"
+  }
+}
