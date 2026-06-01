@@ -1,12 +1,13 @@
 
--- 初始化角色数据
-INSERT INTO sys_role (role_name, role_code, description, status, create_time, update_time) VALUES
+-- 初始化角色数据（使用INSERT IGNORE避免重复插入）
+INSERT IGNORE INTO sys_role (role_name, role_code, description, status, create_time, update_time) VALUES
 ('系统管理员', 'ADMIN', '系统最高权限管理员', 1, NOW(), NOW()),
 ('药剂师', 'PHARMACIST', '药房药品管理人员', 1, NOW(), NOW()),
 ('采购员', 'PURCHASER', '药品采购人员', 1, NOW(), NOW()),
 ('医生', 'DOCTOR', '临床医生', 1, NOW(), NOW()),
 ('特殊药品管理员', 'SPECIAL_PHARMACIST', '毒麻精放药品管理员', 1, NOW(), NOW()),
-('库存管理员', 'STOCK_MANAGER', '仓库库存管理人员', 1, NOW(), NOW());
+('库存管理员', 'STOCK_MANAGER', '仓库库存管理人员', 1, NOW(), NOW()),
+('药剂科主任', 'PHARMACY_DIRECTOR', '药剂科负责人，负责采购审批、特殊药品管理和统计报表', 1, NOW(), NOW());
 
 -- 初始化管理员用户（密码：admin123）
 --INSERT INTO sys_user (username, password, real_name, phone, email, role, status, create_time, update_time) VALUES

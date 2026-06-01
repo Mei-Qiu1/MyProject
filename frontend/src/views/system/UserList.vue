@@ -74,6 +74,7 @@
         <el-form-item label="角色" prop="role">
           <el-select v-model="formData.role">
             <el-option label="系统管理员" value="ADMIN"></el-option>
+            <el-option label="药剂科主任" value="PHARMACY_DIRECTOR"></el-option>
             <el-option label="药剂师" value="PHARMACIST"></el-option>
             <el-option label="采购员" value="PURCHASER"></el-option>
             <el-option label="医生" value="DOCTOR"></el-option>
@@ -97,6 +98,7 @@
         <el-form-item label="角色">
           <el-select v-model="roleForm.role">
             <el-option label="系统管理员" value="ADMIN"></el-option>
+            <el-option label="药剂科主任" value="PHARMACY_DIRECTOR"></el-option>
             <el-option label="药剂师" value="PHARMACIST"></el-option>
             <el-option label="采购员" value="PURCHASER"></el-option>
             <el-option label="医生" value="DOCTOR"></el-option>
@@ -178,6 +180,7 @@ const roleForm = reactive({
 
 const roleNames = {
   ADMIN: '系统管理员',
+  PHARMACY_DIRECTOR: '药剂科主任',
   PHARMACIST: '药剂师',
   PURCHASER: '采购员',
   DOCTOR: '医生',
@@ -188,6 +191,7 @@ const roleNames = {
 
 const roleTagTypes = {
   ADMIN: 'danger',
+  PHARMACY_DIRECTOR: 'danger',
   PHARMACIST: 'primary',
   PURCHASER: 'success',
   DOCTOR: 'warning',

@@ -13,6 +13,13 @@ const routes = [
     component: () => import('../views/Layout.vue'),
     children: [
       { path: '/', name: 'Dashboard', component: () => import('../views/Dashboard.vue') },
+      { path: '/dashboard/admin', name: 'AdminDashboard', component: () => import('../views/dashboard/AdminDashboard.vue') },
+      { path: '/dashboard/doctor', name: 'DoctorDashboard', component: () => import('../views/dashboard/DoctorDashboard.vue') },
+      { path: '/dashboard/pharmacist', name: 'PharmacistDashboard', component: () => import('../views/dashboard/PharmacistDashboard.vue') },
+      { path: '/dashboard/purchaser', name: 'PurchaserDashboard', component: () => import('../views/dashboard/PurchaserDashboard.vue') },
+      { path: '/dashboard/stock-manager', name: 'StockManagerDashboard', component: () => import('../views/dashboard/StockManagerDashboard.vue') },
+      { path: '/dashboard/special-pharmacist', name: 'SpecialPharmacistDashboard', component: () => import('../views/dashboard/SpecialPharmacistDashboard.vue') },
+      { path: '/dashboard/pharmacy-director', name: 'PharmacyDirectorDashboard', component: () => import('../views/dashboard/PharmacyDirectorDashboard.vue') },
       { path: '/system/users', name: 'UserList', component: () => import('../views/system/UserList.vue') },
       { path: '/system/roles', name: 'RoleList', component: () => import('../views/system/RoleList.vue') },
       { path: '/system/logs', name: 'LogList', component: () => import('../views/system/LogList.vue') },
@@ -38,6 +45,7 @@ const routes = [
 // 角色允许访问的路径白名单（可进一步细化）
 const roleRoutes = {
   ADMIN: [
+    '/dashboard/admin',
     '/system/users', '/system/roles', '/system/logs',
     '/drugs/list', '/drugs/categories', '/drugs/suppliers',
     '/purchase/requests', '/purchase/orders',
@@ -47,35 +55,62 @@ const roleRoutes = {
     '/reports/inventory', '/reports/purchase', '/reports/consumption'
   ],
   PHARMACIST: [
-    '/pharmacy/prescriptions', '/pharmacy/dispensing', '/special/drugs',
+    '/dashboard/pharmacist',
+    '/pharmacy/prescriptions', '/pharmacy/dispensing',
     '/drugs/list', '/drugs/categories', '/drugs/suppliers',
     '/inventory/list', '/inventory/warning',
     '/reports/inventory', '/reports/purchase', '/reports/consumption'
   ],
   DOCTOR: [
+    '/dashboard/doctor',
     '/doctor/dispensing',      // 药品调配
-    '/clinical/orders',        // 医嘱管理
-    '/'                         // 首页
+    '/clinical/orders'        // 医嘱管理
   ],
   SPECIAL_PHARMACIST: [
-    '/special/drugs', '/drugs/list',
-    '/reports/inventory'
+    '/dashboard/special-pharmacist',
+    '/special/drugs', 
+    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
+    '/reports/inventory', '/reports/purchase', '/reports/consumption'
   ],
   PURCHASER: [
-    '/purchase/requests', '/purchase/orders', '/drugs/list',
-    '/reports/purchase'
+    '/dashboard/purchaser',
+    '/purchase/requests', '/purchase/orders',
+    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
+    '/reports/inventory', '/reports/purchase', '/reports/consumption'
   ],
   STOCK_MANAGER: [
-    '/inventory/list', '/inventory/warning', '/drugs/list',
-    '/reports/inventory'
+    '/dashboard/stock-manager',
+    '/inventory/list', '/inventory/warning',
+    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
+    '/reports/inventory', '/reports/purchase', '/reports/consumption'
   ],
-  USER: ['/']  // 普通用户只能访问首页
+  PHARMACY_DIRECTOR: [
+    '/dashboard/pharmacy-director',
+    '/purchase/requests', '/purchase/orders',
+    '/special/drugs',
+    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
+    '/inventory/list', '/inventory/warning',
+    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+  ],
+  USER: ['/', '/dashboard/admin']  // 普通用户只能访问首页
 }
 
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+// 根据角色获取对应的Dashboard路径
+const roleDashboard = {
+  ADMIN: '/dashboard/admin',
+  PHARMACIST: '/dashboard/pharmacist',
+  PURCHASER: '/dashboard/purchaser',
+  DOCTOR: '/dashboard/doctor',
+  SPECIAL_PHARMACIST: '/dashboard/special-pharmacist',
+  STOCK_MANAGER: '/dashboard/stock-manager',
+  PHARMACY_DIRECTOR: '/dashboard/pharmacy-director',
+  USER: '/'
+}
 
 // 全局前置守卫：登录验证 + 角色权限校验
 router.beforeEach((to, from, next) => {
@@ -103,15 +138,21 @@ router.beforeEach((to, from, next) => {
     }
   }
 
+  // 如果访问根路径，自动重定向到对应角色的Dashboard
+  if (to.path === '/') {
+    next(roleDashboard[role] || '/')
+    return
+  }
+
   const allowed = roleRoutes[role] || roleRoutes.USER
-  // 允许访问根路径或白名单中的路径（支持前缀匹配）
-  const isAllowed = to.path === '/' || allowed.includes(to.path) || allowed.some(p => to.path.startsWith(p))
+  // 允许访问白名单中的路径（支持前缀匹配）
+  const isAllowed = allowed.includes(to.path) || allowed.some(p => to.path.startsWith(p))
 
   if (isAllowed) {
     next()
   } else {
     ElMessage.error('您没有权限访问该页面')
-    next('/')
+    next(roleDashboard[role] || '/')
   }
 })
 

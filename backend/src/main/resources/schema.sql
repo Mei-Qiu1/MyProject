@@ -1,3 +1,14 @@
+-- 角色菜单关联表
+CREATE TABLE IF NOT EXISTS sys_role_menu (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    menu_id BIGINT NOT NULL,
+    create_time DATETIME NOT NULL,
+    INDEX idx_role_id (role_id),
+    INDEX idx_menu_id (menu_id),
+    UNIQUE KEY uk_role_menu (role_id, menu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 系统用户表
 CREATE TABLE IF NOT EXISTS sys_user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

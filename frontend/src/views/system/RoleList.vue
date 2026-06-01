@@ -53,6 +53,8 @@
         show-checkbox
         default-expand-all
         ref="treeRef"
+        node-key="id"
+        :check-strictly="true"
       ></el-tree>
       <template #footer>
         <el-button @click="showPermissionModal = false">取消</el-button>
@@ -63,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from '../../utils/axios'
 
@@ -110,8 +112,23 @@ const menuTree = ref([
     { id: 61, menuName: '库存报表' },
     { id: 62, menuName: '采购报表' },
     { id: 63, menuName: '消耗报表' }
+  ]},
+  { id: 7, menuName: '特殊药品', children: [
+    { id: 71, menuName: '特殊药品管理' }
   ]}
 ])
+
+const defaultRolePermissions = {
+  ADMIN: [1, 11, 12, 13, 2, 21, 22, 23, 3, 31, 32, 4, 41, 42, 5, 51, 52, 6, 61, 62, 63, 7, 71],
+  PHARMACIST: [2, 21, 4, 41, 42, 5, 51, 52],
+  DOCTOR: [5, 51, 52],
+  PURCHASER: [2, 21, 23, 3, 31, 32],
+  STOCK_MANAGER: [2, 21, 4, 41, 42],
+  SPECIAL_PHARMACIST: [2, 21, 4, 41, 7, 71],
+  PHARMACY_DIRECTOR: [3, 31, 32, 7, 71, 6, 61, 62, 63]
+}
+
+const hasSetPermissions = ref({})
 
 const loadRoles = async () => {
   try {
@@ -150,24 +167,46 @@ const deleteRole = async (row) => {
   }
 }
 
-const setPermissions = (row) => {
+const setPermissions = async (row) => {
   currentRole.value = row
+  
+  if (treeRef.value) {
+    treeRef.value.setCheckedKeys([])
+  }
+  
   showPermissionModal.value = true
+  
+  await nextTick(() => {
+    loadRolePermissions(row.id)
+  })
 }
 
-const saveRole = async () => {
+const loadRolePermissions = async (roleId) => {
   try {
-    if (formData.id) {
-      await axios.put(`/system/roles/${formData.id}`, formData)
-    } else {
-      await axios.post('/system/roles', formData)
+    const response = await axios.get(`/system/roles/${roleId}/permissions`)
+    if (response.code === 200) {
+      const savedPermissions = response.data || []
+      
+      if (savedPermissions.length > 0) {
+        const checkedKeys = savedPermissions.map(id => Number(id))
+        treeRef.value.setCheckedKeys(checkedKeys)
+        hasSetPermissions.value[roleId] = true
+      } else if (!hasSetPermissions.value[roleId]) {
+        const roleCode = currentRole.value.roleCode
+        const defaultPermissions = defaultRolePermissions[roleCode] || []
+        treeRef.value.setCheckedKeys(defaultPermissions)
+      } else {
+        treeRef.value.setCheckedKeys([])
+      }
     }
-    ElMessage.success('保存成功')
-    showAddModal.value = false
-    loadRoles()
-    resetForm()
   } catch (error) {
-    ElMessage.error('保存失败')
+    if (!hasSetPermissions.value[roleId]) {
+      const roleCode = currentRole.value.roleCode
+      const defaultPermissions = defaultRolePermissions[roleCode] || []
+      treeRef.value.setCheckedKeys(defaultPermissions)
+    } else {
+      treeRef.value.setCheckedKeys([])
+    }
   }
 }
 
@@ -175,10 +214,34 @@ const savePermissions = async () => {
   const checkedKeys = treeRef.value.getCheckedKeys()
   try {
     await axios.post(`/system/roles/${currentRole.value.id}/permissions`, { menuIds: checkedKeys })
+    hasSetPermissions.value[currentRole.value.id] = true
     ElMessage.success('权限设置成功')
     showPermissionModal.value = false
   } catch (error) {
     ElMessage.error('权限设置失败')
+  }
+}
+
+const saveRole = async () => {
+  try {
+    if (formData.id) {
+      await axios.put(`/system/roles/${formData.id}`, formData)
+    } else {
+      const response = await axios.post('/system/roles', formData)
+      if (response.code === 200) {
+        const roleCode = formData.roleCode
+        const defaultPermissions = defaultRolePermissions[roleCode] || []
+        if (defaultPermissions.length > 0) {
+          await axios.post(`/system/roles/${response.data}/permissions`, { menuIds: defaultPermissions })
+        }
+      }
+    }
+    ElMessage.success('保存成功')
+    showAddModal.value = false
+    loadRoles()
+    resetForm()
+  } catch (error) {
+    ElMessage.error('保存失败')
   }
 }
 

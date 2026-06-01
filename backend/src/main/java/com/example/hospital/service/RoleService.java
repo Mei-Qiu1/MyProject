@@ -9,4 +9,5 @@ public interface RoleService {
     void update(Role role);
     void delete(Long id);
     void setPermissions(Long roleId, List<Long> menuIds);
+    List<Long> getPermissions(Long roleId);
 }

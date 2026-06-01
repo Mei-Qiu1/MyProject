@@ -87,8 +87,45 @@ public class UserController {
     }
 
     /**
+     * 修改密码
+     * @param id 用户ID
+     * @param request 包含 oldPassword 和 newPassword
+     */
+    @PutMapping("/{id}/password")
+    public Result<?> changePassword(@PathVariable Long id, @RequestBody java.util.Map<String, String> request) {
+        String oldPassword = request.get("oldPassword");
+        String newPassword = request.get("newPassword");
+        
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            return Result.fail("旧密码不能为空");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            return Result.fail("新密码不能为空");
+        }
+        
+        User user = userService.findById(id);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        
+        // 验证旧密码
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return Result.fail("旧密码不正确");
+        }
+        
+        // 更新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdateTime(LocalDateTime.now());
+        userService.update(user);
+        
+        return Result.success("密码修改成功");
+    }
+
+    /**
      * 批量导入用户（Excel文件）
-     * 期望的Excel列顺序：用户名、姓名、电话、邮箱、角色
+     * 期望的Excel列顺序：用户名、姓名、角色、电话、邮箱
+     * 必填列：用户名、姓名、角色（必须有值）
+     * 选填列：电话、邮箱（可以为空）
      */
     @PostMapping("/import")
     public Result<?> importUsers(@RequestParam("file") MultipartFile file) {
@@ -100,6 +137,7 @@ public class UserController {
             return Result.fail("请上传 Excel 文件（.xlsx 或 .xls）");
         }
         List<User> userList = new ArrayList<>();
+        int skippedRows = 0;
         try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet.getPhysicalNumberOfRows() <= 1) {
@@ -109,23 +147,37 @@ public class UserController {
                 if (row.getRowNum() == 0) continue; // 跳过标题行
                 String username = getCellStringValue(row.getCell(0));
                 String realName = getCellStringValue(row.getCell(1));
-                String phone = getCellStringValue(row.getCell(2));
-                String email = getCellStringValue(row.getCell(3));
-                String role = getCellStringValue(row.getCell(4));
+                String role = getCellStringValue(row.getCell(2));
+                String phone = getCellStringValue(row.getCell(3));
+                String email = getCellStringValue(row.getCell(4));
+                
+                // 必填字段校验：用户名、姓名、角色必须有值
                 if (username == null || username.trim().isEmpty()) {
+                    skippedRows++;
                     continue; // 用户名为空则跳过
                 }
+                if (realName == null || realName.trim().isEmpty()) {
+                    skippedRows++;
+                    continue; // 姓名为空则跳过
+                }
+                if (role == null || role.trim().isEmpty()) {
+                    skippedRows++;
+                    continue; // 角色为空则跳过
+                }
+                
                 // 检查用户名是否已存在
                 if (userService.findByUsername(username) != null) {
+                    skippedRows++;
                     continue; // 已存在则跳过，不重复导入
                 }
+                
                 User user = new User();
                 user.setUsername(username);
                 user.setPassword(passwordEncoder.encode("123456")); // 默认密码
                 user.setRealName(realName);
+                user.setRole(role.toUpperCase()); // 角色转换为大写
                 user.setPhone(phone);
                 user.setEmail(email);
-                user.setRole(role != null && !role.isEmpty() ? role : "USER");
                 user.setStatus(1);
                 user.setCreateTime(LocalDateTime.now());
                 user.setUpdateTime(LocalDateTime.now());
@@ -135,7 +187,11 @@ public class UserController {
             for (User user : userList) {
                 userService.save(user);
             }
-            return Result.success("导入成功，共导入 " + userList.size() + " 条记录");
+            String message = "导入成功，共导入 " + userList.size() + " 条记录";
+            if (skippedRows > 0) {
+                message += "，跳过 " + skippedRows + " 条无效记录";
+            }
+            return Result.success(message);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail("导入失败：" + e.getMessage());

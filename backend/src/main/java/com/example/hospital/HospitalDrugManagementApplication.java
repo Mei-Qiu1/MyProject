@@ -12,6 +12,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @MapperScan("com.example.hospital.mapper")
 public class HospitalDrugManagementApplication {
 
+    /**
+     * 显式构造函数
+     */
+    public HospitalDrugManagementApplication() {
+        super();
+        // 显式构造函数，无需调用super()，Spring Boot应用启动类继承自Object
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(HospitalDrugManagementApplication.class, args);
     }

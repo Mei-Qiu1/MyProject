@@ -23,4 +23,22 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
     
     @Select("SELECT COALESCE(SUM(quantity), 0) FROM inventory WHERE drug_id = #{drugId} AND quantity > 0")
     Integer getTotalQuantityByDrugId(Long drugId);
+    
+    @Select("SELECT COUNT(*) FROM inventory WHERE quantity <= #{threshold} AND quantity > 0")
+    Integer countLowStock();
+    
+    @Select("SELECT COUNT(*) FROM inventory WHERE expire_date IS NOT NULL AND expire_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND quantity > 0")
+    Integer countExpiring();
+    
+    @Select("SELECT * FROM inventory WHERE quantity <= #{threshold} AND quantity > 0 ORDER BY quantity ASC LIMIT #{limit}")
+    List<Inventory> selectLowStock(@Param("limit") Integer limit);
+    
+    @Select("SELECT * FROM inventory WHERE expire_date IS NOT NULL AND expire_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND quantity > 0 ORDER BY expire_date ASC LIMIT #{limit}")
+    List<Inventory> selectExpiring(@Param("limit") Integer limit);
+    
+    @Select("SELECT i.* FROM inventory i JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity > 0")
+    List<Inventory> selectSpecialDrugInventory();
+    
+    @Select("SELECT COUNT(*) FROM inventory i JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity <= #{threshold} AND i.quantity > 0")
+    Integer countSpecialLowStock();
 }

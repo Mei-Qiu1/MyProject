@@ -6,6 +6,7 @@ import com.example.hospital.service.RoleService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/system/roles")
@@ -42,8 +43,15 @@ public class RoleController {
         return Result.success("删除成功");
     }
 
+    @GetMapping("/{id}/permissions")
+    public Result<?> getPermissions(@PathVariable Long id) {
+        List<Long> permissions = roleService.getPermissions(id);
+        return Result.success(permissions);
+    }
+
     @PostMapping("/{id}/permissions")
-    public Result<?> setPermissions(@PathVariable Long id, @RequestBody List<Long> menuIds) {
+    public Result<?> setPermissions(@PathVariable Long id, @RequestBody Map<String, List<Long>> request) {
+        List<Long> menuIds = request.get("menuIds");
         roleService.setPermissions(id, menuIds);
         return Result.success("权限设置成功");
     }

@@ -5,8 +5,8 @@
         <h2>药品管理系统</h2>
       </div>
       <el-menu :default-active="activeMenu" class="menu" mode="vertical" :router="true">
-        <!-- 首页始终显示 -->
-        <el-menu-item index="/">
+        <!-- 首页始终显示，指向角色对应的Dashboard -->
+        <el-menu-item :index="dashboardPath">
           <el-icon><Home /></el-icon>
           <span>首页</span>
         </el-menu-item>
@@ -47,8 +47,8 @@
             <el-menu-item index="/drugs/suppliers">供应商管理</el-menu-item>
           </el-sub-menu>
 
-          <!-- 采购管理：仅 ADMIN 或 PURCHASER -->
-          <el-sub-menu index="purchase" v-if="['ADMIN', 'PURCHASER'].includes(userRole)">
+          <!-- 采购管理：仅 ADMIN、PURCHASER 或 PHARMACY_DIRECTOR -->
+          <el-sub-menu index="purchase" v-if="['ADMIN', 'PURCHASER', 'PHARMACY_DIRECTOR'].includes(userRole)">
             <template #title>
               <el-icon><ShoppingCart /></el-icon>
               <span>采购管理</span>
@@ -86,8 +86,8 @@
             <el-menu-item index="/clinical/orders">医嘱管理</el-menu-item>
           </el-sub-menu>
 
-          <!-- 特殊药品：仅 ADMIN 或 SPECIAL_PHARMACIST -->
-          <el-sub-menu index="special" v-if="['ADMIN', 'SPECIAL_PHARMACIST'].includes(userRole)">
+          <!-- 特殊药品：ADMIN、SPECIAL_PHARMACIST 或 PHARMACY_DIRECTOR -->
+          <el-sub-menu index="special" v-if="['ADMIN', 'SPECIAL_PHARMACIST', 'PHARMACY_DIRECTOR'].includes(userRole)">
             <template #title>
               <el-icon><Shield /></el-icon>
               <span>特殊药品</span>
@@ -139,10 +139,24 @@ const roleNameMap = {
   DOCTOR: '医生',
   SPECIAL_PHARMACIST: '特殊药品管理员',
   STOCK_MANAGER: '库存管理员',
+  PHARMACY_DIRECTOR: '药剂科主任',
   USER: '普通用户'
 }
 
+const roleDashboardMap = {
+  ADMIN: '/dashboard/admin',
+  PHARMACIST: '/dashboard/pharmacist',
+  PURCHASER: '/dashboard/purchaser',
+  DOCTOR: '/dashboard/doctor',
+  SPECIAL_PHARMACIST: '/dashboard/special-pharmacist',
+  STOCK_MANAGER: '/dashboard/stock-manager',
+  PHARMACY_DIRECTOR: '/dashboard/pharmacy-director',
+  USER: '/'
+}
+
 const activeMenu = computed(() => router.currentRoute.value.path)
+
+const dashboardPath = computed(() => roleDashboardMap[userRole.value] || '/')
 
 const handleLogout = () => {
   localStorage.removeItem('token')
