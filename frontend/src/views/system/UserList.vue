@@ -127,7 +127,8 @@
         <div class="el-upload__text">将Excel文件拖到此处，或<em>点击上传</em></div>
         <template #tip>
           <div class="el-upload__tip">
-            仅支持 .xlsx 或 .xls 格式，表格需包含列：用户名、姓名、电话、邮箱、角色（可选）
+            仅支持 .xlsx 或 .xls 格式，表格列顺序为：<strong>用户名、姓名、电话、邮箱、角色</strong>。<br/>
+            密码统一默认为 123456；电话必须为1开头的11位数字；角色必须为系统中已存在的角色编码（如 ADMIN、PHARMACIST 等）或中文名称（如“系统管理员”、“医生”）。
           </div>
         </template>
       </el-upload>
