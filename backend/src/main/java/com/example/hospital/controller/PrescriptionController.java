@@ -38,8 +38,13 @@ public class PrescriptionController {
     @PostMapping
     public Result<?> create(@RequestBody Map<String, Object> payload) {
         Prescription prescription = new Prescription();
-        prescription.setPrescriptionNo((String) payload.get("prescriptionNo"));
         prescription.setPatientName((String) payload.get("patientName"));
+        prescription.setPatientId((String) payload.get("patientId"));
+        prescription.setPatientAge((Integer) payload.get("patientAge"));
+        prescription.setPatientSex((String) payload.get("patientSex"));
+        prescription.setDepartment((String) payload.get("department"));
+        prescription.setDoctorName((String) payload.get("doctorName"));
+        prescription.setType((Integer) payload.get("type"));
         prescription.setStatus(1);
         prescriptionService.save(prescription, payload);
         return Result.success("处方创建成功");

@@ -1,100 +1,110 @@
 package com.example.hospital.controller;
 
 import com.example.hospital.common.Result;
+import com.example.hospital.service.ReportService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reports")
 public class ReportController {
 
-    // 库存报表
+    private final ReportService reportService;
+
+    public ReportController(ReportService reportService) {
+        this.reportService = reportService;
+    }
+
+    // ==================== 库存报表 ====================
+
     @GetMapping("/inventory/summary")
     public Result<?> inventorySummary() {
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("totalDrugCount", 0);
-        summary.put("totalQuantity", 0);
-        summary.put("totalAmount", 0);
-        summary.put("expiringCount", 0);
-        return Result.success(summary);
+        return Result.success(reportService.getInventorySummary());
     }
 
     @GetMapping("/inventory/detail")
     public Result<?> inventoryDetail(@RequestParam(defaultValue = "1") int page,
                                      @RequestParam(defaultValue = "10") int size) {
-        return Result.success(Map.of("records", List.of(), "total", 0L, "current", page, "size", size));
+        List<Map<String, Object>> records = reportService.getInventoryDetail(page, size);
+        long total = reportService.getInventoryTotal();
+        return Result.success(Map.of("records", records, "total", total, "current", page, "size", size));
     }
 
     @GetMapping("/inventory/turnover")
     public Result<?> turnover() {
-        return Result.success(List.of());
+        return Result.success(reportService.getTurnoverData());
     }
 
     @GetMapping("/inventory/abc")
     public Result<?> abc() {
-        return Result.success(List.of());
+        return Result.success(reportService.getABCData());
     }
 
     @GetMapping("/inventory/export")
     public void exportInventory() {
-        // 空实现
+        // 空实现，可后续扩展
     }
 
-    // 采购报表
+    // ==================== 采购报表 ====================
+
     @GetMapping("/purchase/summary")
     public Result<?> purchaseSummary(@RequestParam(required = false) Long supplierId,
                                      @RequestParam(required = false) String startDate,
                                      @RequestParam(required = false) String endDate) {
-        return Result.success(Map.of("orderCount", 0, "totalAmount", 0, "completedCount", 0, "pendingCount", 0));
+        return Result.success(reportService.getPurchaseSummary(supplierId, startDate, endDate));
     }
 
     @GetMapping("/purchase/detail")
     public Result<?> purchaseDetail(@RequestParam(defaultValue = "1") int page,
                                     @RequestParam(defaultValue = "10") int size,
                                     @RequestParam(required = false) Long supplierId) {
-        return Result.success(Map.of("records", List.of(), "total", 0L));
+        List<Map<String, Object>> records = reportService.getPurchaseDetail(page, size, supplierId);
+        long total = reportService.getPurchaseTotal(supplierId);
+        return Result.success(Map.of("records", records, "total", total));
     }
 
     @GetMapping("/purchase/supplier-stats")
     public Result<?> supplierStats() {
-        return Result.success(List.of());
+        return Result.success(reportService.getSupplierStats());
     }
 
     @GetMapping("/purchase/trend")
     public Result<?> purchaseTrend() {
-        return Result.success(List.of());
+        return Result.success(reportService.getPurchaseTrend());
     }
 
     @GetMapping("/purchase/export")
     public void exportPurchase() {}
 
-    // 消耗报表
+    // ==================== 消耗报表 ====================
+
     @GetMapping("/consumption/summary")
     public Result<?> consumptionSummary(@RequestParam(required = false) Long departmentId,
                                         @RequestParam(required = false) String startDate,
                                         @RequestParam(required = false) String endDate) {
-        return Result.success(Map.of("totalConsumption", 0, "totalAmount", 0, "drugCount", 0, "departmentCount", 0));
+        return Result.success(reportService.getConsumptionSummary(departmentId, startDate, endDate));
     }
 
     @GetMapping("/consumption/drug-ranking")
     public Result<?> drugRanking(@RequestParam(defaultValue = "10") int limit) {
-        return Result.success(List.of());
+        return Result.success(reportService.getDrugRanking(limit));
     }
 
     @GetMapping("/consumption/department-stats")
     public Result<?> departmentStats() {
-        return Result.success(List.of());
+        return Result.success(reportService.getDepartmentStats());
     }
 
     @GetMapping("/consumption/doctor-stats")
     public Result<?> doctorStats() {
-        return Result.success(List.of());
+        return Result.success(reportService.getDoctorStats());
     }
 
     @GetMapping("/consumption/trend")
     public Result<?> consumptionTrend() {
-        return Result.success(List.of());
+        return Result.success(reportService.getConsumptionTrend());
     }
 
     @GetMapping("/consumption/export")

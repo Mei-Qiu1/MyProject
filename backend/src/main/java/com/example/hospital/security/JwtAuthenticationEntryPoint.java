@@ -32,7 +32,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         
-        Result<?> result = Result.fail("未授权访问，请先登录");
+        Result<?> result = Result.unauthorized();
         response.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }

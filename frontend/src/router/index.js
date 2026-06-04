@@ -32,6 +32,7 @@ const routes = [
       { path: '/inventory/warning', name: 'InventoryWarning', component: () => import('../views/inventory/InventoryWarning.vue') },
       { path: '/pharmacy/prescriptions', name: 'PrescriptionList', component: () => import('../views/pharmacy/PrescriptionList.vue') },
       { path: '/pharmacy/dispensing', name: 'Dispensing', component: () => import('../views/pharmacy/Dispensing.vue') },
+      { path: '/pharmacy/delivery', name: 'DeliveryList', component: () => import('../views/pharmacy/DeliveryList.vue') },
       { path: '/clinical/orders', name: 'MedicalOrder', component: () => import('../views/clinical/MedicalOrder.vue') },
       { path: '/special/drugs', name: 'SpecialDrug', component: () => import('../views/special/SpecialDrug.vue') },
       { path: '/reports/inventory', name: 'InventoryReport', component: () => import('../views/reports/InventoryReport.vue') },
@@ -56,7 +57,7 @@ const roleRoutes = {
   ],
   PHARMACIST: [
     '/dashboard/pharmacist',
-    '/pharmacy/prescriptions', '/pharmacy/dispensing',
+    '/pharmacy/prescriptions', '/pharmacy/dispensing', '/pharmacy/delivery',
     '/drugs/list', '/drugs/categories', '/drugs/suppliers',
     '/inventory/list', '/inventory/warning',
     '/reports/inventory', '/reports/purchase', '/reports/consumption'

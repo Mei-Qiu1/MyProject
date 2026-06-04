@@ -44,6 +44,7 @@
           <el-button v-if="scope.row.status === 2" type="text" @click="dispense(scope.row)">调配</el-button>
           <el-button v-if="scope.row.status === 3" type="text" @click="dispense(scope.row)">发药</el-button>
           <el-button v-if="scope.row.status === 4" type="text" @click="returnDrug(scope.row)">退药</el-button>
+          <el-button v-if="scope.row.status === 6" type="text" disabled>已拒绝</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -158,7 +159,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-button type="primary" @click="showDrugSelector = true">添加药品</el-button>
+        <el-button type="primary" @click="openDrugSelector">添加药品</el-button>
       </div>
       <template #footer>
         <el-button @click="showAddModal = false">取消</el-button>
@@ -221,8 +222,8 @@ const formData = reactive({
 
 const detailList = ref([])
 
-const statusNames = { 1: '待审核', 2: '已审核', 3: '已调配', 4: '已发药', 5: '已退药' }
-const statusTagTypes = { 1: 'warning', 2: 'success', 3: 'primary', 4: 'info', 5: 'danger' }
+const statusNames = { 1: '待审核', 2: '已审核', 3: '已调配', 4: '已发药', 5: '已退药', 6: '已拒绝' }
+const statusTagTypes = { 1: 'warning', 2: 'success', 3: 'primary', 4: 'info', 5: 'danger', 6: 'danger' }
 
 const getStatusName = (status) => statusNames[status] || '未知'
 const getStatusTagType = (status) => statusTagTypes[status] || 'default'
@@ -255,6 +256,12 @@ const searchDrugs = async () => {
   } catch (error) {
     ElMessage.error('搜索药品失败')
   }
+}
+
+const openDrugSelector = () => {
+  drugKeyword.value = ''
+  showDrugSelector.value = true
+  searchDrugs()
 }
 
 const selectDrug = (drug) => {

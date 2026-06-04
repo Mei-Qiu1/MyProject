@@ -35,6 +35,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(request -> {
+                var corsConfig = new org.springframework.web.cors.CorsConfiguration();
+                corsConfig.setAllowedOriginPatterns(java.util.Arrays.asList("*"));
+                corsConfig.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                corsConfig.setAllowedHeaders(java.util.Arrays.asList("*"));
+                corsConfig.setAllowCredentials(true);
+                corsConfig.setMaxAge(3600L);
+                return corsConfig;
+            }))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -43,7 +52,7 @@ public class SecurityConfig {
                 .requestMatchers("/drugs/**").hasAnyAuthority("ADMIN", "PHARMACIST", "PURCHASER", "STOCK_MANAGER", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR")
                 .requestMatchers("/purchase/**").hasAnyAuthority("ADMIN", "PURCHASER", "PHARMACY_DIRECTOR")
                 .requestMatchers("/inventory/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER")
-                .requestMatchers("/pharmacy/**").hasAnyAuthority("ADMIN", "PHARMACIST")
+                .requestMatchers("/pharmacy/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER")
                 .requestMatchers("/clinical/**").hasAnyAuthority("ADMIN", "DOCTOR", "PHARMACIST")
                 .requestMatchers("/special/**").hasAnyAuthority("ADMIN", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR")
                 .requestMatchers("/system/**").hasAuthority("ADMIN")

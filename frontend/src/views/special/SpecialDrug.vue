@@ -101,6 +101,35 @@
       </template>
     </el-dialog>
     
+    <el-dialog title="库存详情" v-model="showDetailModal" width="500px">
+      <el-form :model="detailForm" label-width="100px">
+        <el-form-item label="药品编码">
+          <el-input :value="detailForm.drugCode" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="药品名称">
+          <el-input :value="detailForm.drugName" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="规格">
+          <el-input :value="detailForm.spec" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="批号">
+          <el-input :value="detailForm.batchNo" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="有效期">
+          <el-input :value="detailForm.expireDate" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="库存数量">
+          <el-input :value="detailForm.quantity" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="仓库">
+          <el-input :value="detailForm.warehouse" disabled></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showDetailModal = false">关闭</el-button>
+      </template>
+    </el-dialog>
+    
     <el-dialog title="领用申请" v-model="showApplyModal" width="600px">
       <el-form :model="applyForm" ref="applyFormRef" label-width="100px">
         <el-form-item label="药品" prop="drugId">
@@ -140,7 +169,18 @@ const applyList = ref([])
 const specialDrugs = ref([])
 const showRecycleModal = ref(false)
 const showApplyModal = ref(false)
+const showDetailModal = ref(false)
 const applyFormRef = ref(null)
+
+const detailForm = reactive({
+  drugCode: '',
+  drugName: '',
+  spec: '',
+  batchNo: '',
+  expireDate: '',
+  quantity: null,
+  warehouse: ''
+})
 
 const recycleForm = reactive({
   recordId: null,
@@ -221,6 +261,14 @@ const handleSearch = () => {
 }
 
 const viewDetail = (row) => {
+  detailForm.drugCode = row.drugCode || ''
+  detailForm.drugName = row.drugName || ''
+  detailForm.spec = row.spec || ''
+  detailForm.batchNo = row.batchNo || ''
+  detailForm.expireDate = row.expireDate || ''
+  detailForm.quantity = row.quantity || null
+  detailForm.warehouse = row.warehouse || ''
+  showDetailModal.value = true
 }
 
 const recycle = (row) => {

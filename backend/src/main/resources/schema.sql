@@ -396,18 +396,54 @@ CREATE TABLE IF NOT EXISTS medical_order (
     INDEX idx_patient_id (patient_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 医嘱明细表
+CREATE TABLE IF NOT EXISTS medical_order_detail (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    drug_id BIGINT NOT NULL,
+    drug_name VARCHAR(100),
+    spec VARCHAR(100),
+    quantity INT NOT NULL,
+    frequency VARCHAR(50),
+    duration VARCHAR(50),
+    create_time DATETIME,
+    INDEX idx_order_id (order_id),
+    INDEX idx_drug_id (drug_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 药品配送表
 CREATE TABLE IF NOT EXISTS drug_delivery (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     delivery_no VARCHAR(50) NOT NULL UNIQUE,
     order_id BIGINT,
+    patient_id VARCHAR(50),
+    patient_name VARCHAR(50),
     department VARCHAR(100),
+    bed_no VARCHAR(20),
     status INT NOT NULL DEFAULT 1,
     delivery_time DATETIME,
     signer VARCHAR(50),
+    sign_time DATETIME,
     create_by BIGINT,
     create_time DATETIME NOT NULL,
-    INDEX idx_delivery_no (delivery_no)
+    update_time DATETIME NOT NULL,
+    INDEX idx_delivery_no (delivery_no),
+    INDEX idx_order_id (order_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 配送明细表
+CREATE TABLE IF NOT EXISTS delivery_detail (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    delivery_id BIGINT NOT NULL,
+    drug_id BIGINT NOT NULL,
+    drug_name VARCHAR(100),
+    spec VARCHAR(100),
+    quantity INT NOT NULL,
+    frequency VARCHAR(50),
+    duration VARCHAR(50),
+    INDEX idx_delivery_id (delivery_id),
+    INDEX idx_drug_id (drug_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用药记录表

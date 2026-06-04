@@ -2,20 +2,18 @@ package com.example.hospital.controller;
 
 import com.example.hospital.common.Result;
 import com.example.hospital.entity.Role;
+import com.example.hospital.entity.SysLog;
 import com.example.hospital.service.LogService;
 import com.example.hospital.service.RoleService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;import jakarta.servlet.http.HttpServletRequest;           // 获取请求IP
-import org.springframework.security.core.Authentication;   // 获取当前认证信息
-import org.springframework.security.core.context.SecurityContextHolder; // 获取安全上下文
-import java.time.LocalDateTime;                            // 记录日志时间
-import java.util.Arrays;                                   // 将参数转为字符串
-import java.util.Map;                                      // 权限设置参数
-import java.util.List;                                     // 权限设置参数
-import com.example.hospital.entity.SysLog;                 // 日志实体
-import com.example.hospital.service.LogService;            // 日志服务
+import java.util.Map;
 
 @RestController
 @RequestMapping("/system/roles")

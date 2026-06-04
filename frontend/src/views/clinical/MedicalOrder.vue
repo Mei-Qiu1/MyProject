@@ -124,7 +124,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-button type="primary" @click="showDrugSelector = true">添加药品</el-button>
+        <el-button type="primary" @click="openDrugSelector">添加药品</el-button>
       </div>
       <template #footer>
         <el-button @click="showAddModal = false">取消</el-button>
@@ -213,6 +213,12 @@ const searchDrugs = async () => {
   }
 }
 
+const openDrugSelector = () => {
+  drugKeyword.value = ''
+  showDrugSelector.value = true
+  searchDrugs()
+}
+
 const selectDrug = (drug) => {
   const existing = detailList.value.find(d => d.drugId === drug.id)
   if (!existing) {
@@ -268,9 +274,13 @@ const executeOrder = async (row) => {
 
 const createDelivery = async (row) => {
   try {
-    await axios.post(`/clinical/orders/${row.id}/delivery`)
-    ElMessage.success('配送单已生成')
-    loadOrders()
+    const response = await axios.post(`/pharmacy/delivery/order/${row.id}`)
+    if (response.code === 200) {
+      ElMessage.success('配送单已生成')
+      loadOrders()
+    } else {
+      ElMessage.error(response.message || '生成失败')
+    }
   } catch (error) {
     ElMessage.error('生成失败')
   }
