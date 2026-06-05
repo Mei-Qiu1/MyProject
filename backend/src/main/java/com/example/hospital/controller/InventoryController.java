@@ -6,9 +6,12 @@ import com.example.hospital.common.Result;
 import com.example.hospital.entity.Inventory;
 import com.example.hospital.service.InventoryService;
 import com.example.hospital.service.WarehouseService;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/inventory")
@@ -22,79 +25,73 @@ public class InventoryController {
         this.warehouseService = warehouseService;
     }
 
+    // 库存查询列表（分页）
     @GetMapping
     public Result<?> list(@RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "10") int size,
-                          @RequestParam(required = false) Long drugId,
-                          @RequestParam(required = false) String batchNo) {
-        IPage<Inventory> inventoryPage = inventoryService.list(page, size, drugId, batchNo);
+                          @RequestParam(required = false) String keyword,
+                          @RequestParam(required = false) Long warehouseId) {
+        IPage<Inventory> inventoryPage = inventoryService.list(page, size, keyword, warehouseId);
         return Result.success(PageResult.of(inventoryPage.getRecords(), inventoryPage.getTotal(),
                 (int) inventoryPage.getCurrent(), (int) inventoryPage.getSize()));
     }
 
-    @GetMapping("/{id}")
-    public Result<?> getById(@PathVariable Long id) {
-        Inventory inventory = inventoryService.findById(id);
-        if (inventory != null) {
-            return Result.success(inventory);
-        }
-        return Result.fail("库存记录不存在");
-    }
-
-    @GetMapping("/expiring")
-    public Result<?> getExpiringDrugs(@RequestParam(defaultValue = "30") Integer days,
-                                      @RequestParam(required = false) String keyword) {
-        List<Inventory> list = inventoryService.findExpiringDrugs(days);
-        return Result.success(list);
-    }
-
+    // 低库存预警（按仓库聚合，不区分批次，仅未过期）
     @GetMapping("/low-stock")
-    public Result<?> getLowStock(@RequestParam(defaultValue = "10") Integer threshold,
-                                 @RequestParam(required = false) String keyword) {
-        List<Inventory> list = inventoryService.findLowStockDrugs(threshold);
+    public Result<?> getLowStock(@RequestParam(required = false) String keyword,
+                                 @RequestParam(required = false) Long warehouseId) {
+        List<Map<String, Object>> list = inventoryService.getLowStockByWarehouse(warehouseId);
+        if (StringUtils.hasText(keyword)) {
+            list = list.stream()
+                    .filter(item -> item.get("drugName").toString().contains(keyword) ||
+                            item.get("drugCode").toString().contains(keyword))
+                    .collect(Collectors.toList());
+        }
         return Result.success(list);
     }
 
-    @GetMapping("/quantity/{drugId}")
-    public Result<?> getTotalQuantity(@PathVariable Long drugId) {
-        Integer quantity = inventoryService.getTotalQuantityByDrugId(drugId);
-        return Result.success(quantity);
+    // 效期预警
+    @GetMapping("/expiring")
+    public Result<?> getExpiringDrugs(@RequestParam(defaultValue = "180") Integer days,
+                                      @RequestParam(required = false) String keyword,
+                                      @RequestParam(defaultValue = "true") Boolean includeExpired,
+                                      @RequestParam(required = false) Long warehouseId) {
+        List<Map<String, Object>> list = inventoryService.getExpiringDrugsMap(days, keyword, includeExpired, warehouseId);
+        return Result.success(list);
     }
 
-    // 新增：获取仓库列表，供前端下拉选择
+    // 获取仓库列表
     @GetMapping("/warehouses")
     public Result<?> getWarehouses() {
         return Result.success(warehouseService.list());
     }
 
-    @PostMapping
-    public Result<?> create(@RequestBody Inventory inventory) {
-        inventoryService.save(inventory);
-        return Result.success("入库成功");
-    }
-
-    @PutMapping("/{id}")
-    public Result<?> update(@PathVariable Long id, @RequestBody Inventory inventory) {
-        inventory.setId(id);
-        inventoryService.update(inventory);
-        return Result.success("更新成功");
-    }
-
-    @DeleteMapping("/{id}")
-    public Result<?> delete(@PathVariable Long id) {
-        inventoryService.delete(id);
-        return Result.success("删除成功");
-    }
-
+    // 报损（减少库存）
     @PostMapping("/{id}/decrease")
     public Result<?> decreaseStock(@PathVariable Long id, @RequestParam Integer quantity) {
-        inventoryService.decreaseStock(id, quantity);
-        return Result.success("出库成功");
+        try {
+            inventoryService.decreaseStock(id, quantity);
+            return Result.success("报损成功");
+        } catch (IllegalArgumentException e) {
+            return Result.fail(e.getMessage());
+        }
     }
 
-    @PostMapping("/{id}/increase")
-    public Result<?> increaseStock(@PathVariable Long id, @RequestParam Integer quantity) {
-        inventoryService.increaseStock(id, quantity);
-        return Result.success("库存增加成功");
+    // 调拨
+    @PostMapping("/transfer")
+    public Result<?> transfer(@RequestBody Map<String, Object> params) {
+        try {
+            Long fromInventoryId = Long.valueOf(params.get("fromInventoryId").toString());
+            Long toWarehouseId = Long.valueOf(params.get("toWarehouseId").toString());
+            Integer quantity = Integer.valueOf(params.get("quantity").toString());
+            String remark = (String) params.get("remark");
+            inventoryService.transfer(fromInventoryId, toWarehouseId, quantity, remark);
+            return Result.success("调拨成功");
+        } catch (IllegalArgumentException e) {
+            return Result.fail(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("调拨失败：" + e.getMessage());
+        }
     }
 }

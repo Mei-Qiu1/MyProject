@@ -4,9 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.hospital.common.PageResult;
 import com.example.hospital.common.Result;
 import com.example.hospital.entity.PurchaseOrder;
+import com.example.hospital.entity.PurchaseOrderDetail;
 import com.example.hospital.service.PurchaseOrderService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -31,8 +34,23 @@ public class PurchaseOrderController {
 
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id) {
-        PurchaseOrder order = purchaseOrderService.findById(id);
-        return order != null ? Result.success(order) : Result.fail("订单不存在");
+        PurchaseOrder order = purchaseOrderService.findByIdWithNames(id);
+        if (order == null) {
+            return Result.fail("订单不存在");
+        }
+        List<PurchaseOrderDetail> details = purchaseOrderService.getDetailsByOrderId(id);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", order.getId());
+        result.put("orderNo", order.getOrderNo());
+        result.put("supplierId", order.getSupplierId());
+        result.put("supplierName", order.getSupplierName());
+        result.put("totalAmount", order.getTotalAmount());
+        result.put("status", order.getStatus());
+        result.put("deliveryDate", order.getDeliveryDate());
+        result.put("createTime", order.getCreateTime());
+        result.put("details", details);
+        return Result.success(result);
     }
 
     @PostMapping

@@ -1,4 +1,3 @@
-
 <template>
   <div class="category-list">
     <div class="search-bar">
@@ -6,13 +5,12 @@
         <el-radio :label="1">药理分类</el-radio>
         <el-radio :label="2">管理分类</el-radio>
       </el-radio-group>
-      <el-button type="success" @click="showAddModal = true">新增分类</el-button>
     </div>
-    
+
     <el-tree
-      :data="categoryTree"
-      :props="{ label: 'categoryName', children: 'children' }"
-      :expand-on-click-node="false"
+        :data="categoryTree"
+        :props="{ label: 'categoryName', children: 'children' }"
+        :expand-on-click-node="false"
     >
       <template #default="{ node, data }">
         <span class="tree-node">
@@ -24,8 +22,8 @@
         </span>
       </template>
     </el-tree>
-    
-    <el-dialog title="新增/编辑分类" v-model="showAddModal">
+
+    <el-dialog title="编辑分类" v-model="showAddModal" width="500px">
       <el-form :model="formData" ref="formRef" label-width="100px">
         <el-form-item label="分类名称" prop="categoryName">
           <el-input v-model="formData.categoryName"></el-input>
@@ -91,11 +89,11 @@ const loadCategories = async () => {
 const buildTree = (list) => {
   const map = new Map()
   const roots = []
-  
+
   list.forEach(item => {
     map.set(item.id, { ...item, children: [] })
   })
-  
+
   list.forEach(item => {
     const node = map.get(item.id)
     if (item.parentId && item.parentId !== 0 && map.has(item.parentId)) {
@@ -104,7 +102,7 @@ const buildTree = (list) => {
       roots.push(node)
     }
   })
-  
+
   return roots
 }
 
@@ -130,13 +128,14 @@ const deleteCategory = async (data) => {
 }
 
 const saveCategory = async () => {
+  // 仅允许编辑已有分类，不允许新增
+  if (!formData.id) {
+    ElMessage.warning('暂不支持新增分类，只能编辑现有分类')
+    return
+  }
   formData.type = categoryType.value
   try {
-    if (formData.id) {
-      await axios.put(`/drugs/categories/${formData.id}`, formData)
-    } else {
-      await axios.post('/drugs/categories', formData)
-    }
+    await axios.put(`/drugs/categories/${formData.id}`, formData)
     ElMessage.success('保存成功')
     showAddModal.value = false
     loadCategories()

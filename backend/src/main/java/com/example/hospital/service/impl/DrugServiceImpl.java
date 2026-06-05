@@ -1,4 +1,3 @@
-
 package com.example.hospital.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -10,31 +9,31 @@ import com.example.hospital.service.DrugService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * 药品服务实现类
- */
 @Service
 public class DrugServiceImpl implements DrugService {
-    
+
     private final DrugMapper drugMapper;
-    
+
     public DrugServiceImpl(DrugMapper drugMapper) {
         this.drugMapper = drugMapper;
     }
-    
+
     @Override
     public Drug findById(Long id) {
         return drugMapper.selectById(id);
     }
-    
+
     @Override
     public Drug findByCode(String drugCode) {
         LambdaQueryWrapper<Drug> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Drug::getDrugCode, drugCode);
         return drugMapper.selectOne(wrapper);
     }
-    
+
     @Override
     public Drug save(Drug drug) {
         drug.setCreateTime(LocalDateTime.now());
@@ -42,33 +41,34 @@ public class DrugServiceImpl implements DrugService {
         drugMapper.insert(drug);
         return drug;
     }
-    
+
     @Override
     public void update(Drug drug) {
         drug.setUpdateTime(LocalDateTime.now());
         drugMapper.updateById(drug);
     }
-    
+
     @Override
     public void delete(Long id) {
         drugMapper.deleteById(id);
     }
-    
+
     @Override
-    public IPage<Drug> list(int page, int size, String keyword, Long categoryId) {
+    public IPage<Drug> list(int page, int size, String keyword, Long categoryId, Long manageCategoryId) {
         Page<Drug> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Drug> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(Drug::getDrugName, keyword)
-                   .or()
-                   .like(Drug::getDrugCode, keyword);
+            wrapper.and(w -> w.like(Drug::getDrugName, keyword).or().like(Drug::getDrugCode, keyword));
         }
         if (categoryId != null) {
             wrapper.eq(Drug::getCategoryId, categoryId);
         }
+        if (manageCategoryId != null) {
+            wrapper.eq(Drug::getManageCategoryId, manageCategoryId);
+        }
         return drugMapper.selectPage(pageParam, wrapper);
     }
-    
+
     @Override
     public void updateStatus(Long id, Integer status) {
         Drug drug = drugMapper.selectById(id);
@@ -77,5 +77,16 @@ public class DrugServiceImpl implements DrugService {
             drug.setUpdateTime(LocalDateTime.now());
             drugMapper.updateById(drug);
         }
+    }
+
+    @Override
+    public List<Drug> listAll(LambdaQueryWrapper<Drug> wrapper) {
+        return drugMapper.selectList(wrapper);
+    }
+
+    @Override
+    public Set<String> getAllDrugCodes() {
+        List<Drug> drugs = drugMapper.selectList(null);
+        return drugs.stream().map(Drug::getDrugCode).collect(Collectors.toSet());
     }
 }

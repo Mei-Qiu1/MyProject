@@ -19,7 +19,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @TableName("drug")
 public class Drug {
-    
+
+    // 在 Drug.java 中添加
+    private Integer minStock;
+
     @TableId(type = IdType.AUTO)
     private Long id;
     private String drugCode;
