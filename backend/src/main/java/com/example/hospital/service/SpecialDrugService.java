@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface SpecialDrugService {
     List<Map<String, Object>> listInventory(String keyword);
-    List<SpecialDrugRecord> listRecords(String keyword);
+    List<Map<String, Object>> listRecords(String keyword);
     List<SpecialDrugApply> listApplies();
     void saveApply(Map<String, Object> apply);
     void approveApply(Long id, Map<String, String> users);

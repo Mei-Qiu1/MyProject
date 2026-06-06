@@ -4,7 +4,7 @@
     <div class="search-bar">
       <el-input v-model="keyword" placeholder="搜索供应商名称或编码" class="search-input"></el-input>
       <el-button type="primary" @click="handleSearch">搜索</el-button>
-      <el-button type="success" @click="showAddModal = true">新增供应商</el-button>
+      <el-button type="success" @click="handleAdd">新增供应商</el-button>
     </div>
     
     <el-table :data="supplierList" border>
@@ -24,13 +24,13 @@
       </el-table-column>
       <el-table-column prop="status" label="状态">
         <template #default="scope">
-          <el-switch :value="scope.row.status === 1" @change="toggleStatus(scope.row)"></el-switch>
+          <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="toggleStatus(scope.row, $event)"></el-switch>
         </template>
       </el-table-column>
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button type="text" @click="editSupplier(scope.row)">编辑</el-button>
-          <el-button type="text" @click="deleteSupplier(scope.row)">删除</el-button>
+          <el-button type="link" @click="editSupplier(scope.row)">编辑</el-button>
+          <el-button type="link" @click="deleteSupplier(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -69,8 +69,14 @@
         <el-form-item label="银行账户" prop="bankAccount">
           <el-input v-model="formData.bankAccount"></el-input>
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="formData.status" @change="onStatusChange">
+            <el-option label="启用" :value="1"></el-option>
+            <el-option label="禁用" :value="0"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="合作状态" prop="cooperationStatus">
-          <el-select v-model="formData.cooperationStatus">
+          <el-select v-model="formData.cooperationStatus" @change="onCooperationStatusChange">
             <el-option label="合作中" :value="1"></el-option>
             <el-option label="暂停合作" :value="0"></el-option>
           </el-select>
@@ -113,9 +119,26 @@ const formData = reactive({
   qualificationNo: '',
   qualificationExpireDate: null,
   bankAccount: '',
+  status: 1,
   cooperationStatus: 1,
   remark: ''
 })
+
+// 状态改变时同步更新合作状态
+const onStatusChange = () => {
+  formData.cooperationStatus = formData.status
+}
+
+// 合作状态改变时同步更新状态
+const onCooperationStatusChange = () => {
+  formData.status = formData.cooperationStatus
+}
+
+// 新增供应商前先重置表单
+const handleAdd = () => {
+  resetForm()
+  showAddModal.value = true
+}
 
 const loadSuppliers = async () => {
   try {
@@ -145,14 +168,19 @@ const handlePageChange = (page) => {
   loadSuppliers()
 }
 
-const toggleStatus = async (row) => {
+const toggleStatus = async (row, newStatus) => {
+  const oldStatus = row.status
+  const oldCooperationStatus = row.cooperationStatus
   try {
-    await axios.put(`/drugs/suppliers/${row.id}/status`, {}, { params: { status: row.status === 1 ? 0 : 1 } })
-    row.status = row.status === 1 ? 0 : 1
+    await axios.put(`/drugs/suppliers/${row.id}/status`, {}, { params: { status: newStatus } })
+    row.status = newStatus
+    // 状态和合作状态保持一致：开启→合作中，关闭→暂停
+    row.cooperationStatus = newStatus
     ElMessage.success('状态更新成功')
   } catch (error) {
     ElMessage.error('状态更新失败')
-    row.status = row.status === 1 ? 0 : 1
+    row.status = oldStatus
+    row.cooperationStatus = oldCooperationStatus
   }
 }
 
@@ -190,10 +218,18 @@ const saveSupplier = async () => {
 }
 
 const resetForm = () => {
-  Object.keys(formData).forEach(key => {
-    formData[key] = null
-  })
+  formData.id = null
+  formData.supplierCode = ''
+  formData.supplierName = ''
+  formData.contactName = ''
+  formData.phone = ''
+  formData.address = ''
+  formData.qualificationNo = ''
+  formData.qualificationExpireDate = null
+  formData.bankAccount = ''
+  formData.status = 1
   formData.cooperationStatus = 1
+  formData.remark = ''
 }
 
 onMounted(() => {

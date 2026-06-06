@@ -38,9 +38,9 @@
       <el-table-column prop="orderTime" label="开立时间" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button type="text" @click="viewDetail(scope.row)">详情</el-button>
-          <el-button v-if="scope.row.status === 1" type="text" @click="executeOrder(scope.row)">执行</el-button>
-          <el-button v-if="scope.row.status === 2" type="text" @click="createDelivery(scope.row)">生成配送单</el-button>
+          <el-button type="link" @click="viewDetail(scope.row)">详情</el-button>
+          <el-button v-if="scope.row.status === 1" type="link" @click="executeOrder(scope.row)">执行</el-button>
+          <el-button v-if="scope.row.status === 2" type="link" @click="createDelivery(scope.row)">生成配送单</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -120,7 +120,7 @@
           </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button type="text" @click="removeDetail(scope.$index)">删除</el-button>
+              <el-button type="link" @click="removeDetail(scope.$index)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -207,9 +207,12 @@ const searchDrugs = async () => {
     const response = await axios.get('/drugs', { params: { keyword: drugKeyword.value, size: 20 } })
     if (response.code === 200) {
       drugOptions.value = response.data.records || response.data
+    } else {
+      drugOptions.value = []
     }
   } catch (error) {
-    ElMessage.error('搜索药品失败')
+    drugOptions.value = []
+    console.error('搜索药品失败:', error)
   }
 }
 
@@ -256,9 +259,11 @@ const viewDetail = async (row) => {
     if (response.code === 200) {
       Object.assign(detailData, response.data)
       showDetailModal.value = true
+    } else {
+      ElMessage.error(response.message || '获取医嘱详情失败')
     }
   } catch (error) {
-    ElMessage.error('获取医嘱详情失败')
+    ElMessage.error(error.response?.data?.message || '获取医嘱详情失败')
   }
 }
 
@@ -274,7 +279,7 @@ const executeOrder = async (row) => {
 
 const createDelivery = async (row) => {
   try {
-    const response = await axios.post(`/pharmacy/delivery/order/${row.id}`)
+    const response = await axios.post(`/clinical/orders/${row.id}/delivery`)
     if (response.code === 200) {
       ElMessage.success('配送单已生成')
       loadOrders()
@@ -282,7 +287,7 @@ const createDelivery = async (row) => {
       ElMessage.error(response.message || '生成失败')
     }
   } catch (error) {
-    ElMessage.error('生成失败')
+    ElMessage.error(error.response?.data?.message || '生成失败')
   }
 }
 

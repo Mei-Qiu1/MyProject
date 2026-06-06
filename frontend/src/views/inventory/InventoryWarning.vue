@@ -43,7 +43,7 @@
             </el-table-column>
             <el-table-column label="操作" width="150">
               <template #default="scope">
-                <el-button type="text" @click="openCreateRequestDialog(scope.row)">创建采购申请</el-button>
+                <el-button type="link" @click="openCreateRequestDialog(scope.row)">创建采购申请</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -108,8 +108,8 @@
             </el-table-column>
             <el-table-column label="操作" width="150">
               <template #default="scope">
-                <el-button v-if="scope.row.daysLeft >= 0" type="text" @click="openTransferDialog(scope.row)">调拨</el-button>
-                <el-button type="text" @click="writeOff(scope.row)">报损</el-button>
+                <el-button v-if="scope.row.daysLeft >= 0" type="link" @click="openTransferDialog(scope.row)">调拨</el-button>
+                <el-button type="link" @click="writeOff(scope.row)">报损</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -293,10 +293,9 @@ const getExpireTagType = (expireDate) => {
 }
 
 const getSuggestQuantity = (row) => {
-  const total = row.currentStock || 0
   const threshold = row.minStock || 0
-  const suggest = threshold * 2 - total
-  return suggest > threshold ? suggest : threshold
+  // 建议采购量 = 预警阈值 * 3
+  return threshold * 3
 }
 
 // ========== 低库存预警 ==========

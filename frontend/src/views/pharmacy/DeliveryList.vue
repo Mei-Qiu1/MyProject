@@ -28,8 +28,8 @@
       <el-table-column prop="signer" label="签收人" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button type="text" @click="viewDetail(scope.row)">详情</el-button>
-          <el-button v-if="scope.row.status === 1" type="text" @click="handleSign(scope.row)">签收</el-button>
+          <el-button type="link" @click="viewDetail(scope.row)">详情</el-button>
+          <el-button v-if="scope.row.status === 1" type="link" @click="handleSign(scope.row)">签收</el-button>
         </template>
       </el-table-column>
     </el-table>

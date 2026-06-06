@@ -39,12 +39,12 @@
       <el-table-column prop="createTime" label="开方时间" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button type="text" @click="viewDetail(scope.row)">详情</el-button>
-          <el-button v-if="scope.row.status === 1" type="text" @click="auditPrescription(scope.row)">审核</el-button>
-          <el-button v-if="scope.row.status === 2" type="text" @click="dispense(scope.row)">调配</el-button>
-          <el-button v-if="scope.row.status === 3" type="text" @click="dispense(scope.row)">发药</el-button>
-          <el-button v-if="scope.row.status === 4" type="text" @click="returnDrug(scope.row)">退药</el-button>
-          <el-button v-if="scope.row.status === 6" type="text" disabled>已拒绝</el-button>
+          <el-button type="link" @click="viewDetail(scope.row)">详情</el-button>
+          <el-button v-if="scope.row.status === 1" type="link" @click="auditPrescription(scope.row)">审核</el-button>
+          <el-button v-if="scope.row.status === 2" type="link" @click="dispense(scope.row)">调配</el-button>
+          <el-button v-if="scope.row.status === 3" type="link" @click="dispense(scope.row)">发药</el-button>
+          <el-button v-if="scope.row.status === 4" type="link" @click="returnDrug(scope.row)">退药</el-button>
+          <el-button v-if="scope.row.status === 6" type="link" disabled>已拒绝</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -155,7 +155,7 @@
           </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button type="text" @click="removeDetail(scope.$index)">删除</el-button>
+              <el-button type="link" @click="removeDetail(scope.$index)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -303,9 +303,11 @@ const viewDetail = async (row) => {
     if (response.code === 200) {
       Object.assign(detailData, response.data)
       showDetailModal.value = true
+    } else {
+      ElMessage.error(response.message || '获取处方详情失败')
     }
   } catch (error) {
-    ElMessage.error('获取处方详情失败')
+    ElMessage.error(error.response?.data?.message || '获取处方详情失败')
   }
 }
 
@@ -319,7 +321,7 @@ const auditPrescription = async (row) => {
       auditWarnings.value = response.data.warnings || []
     }
   } catch (error) {
-    console.log('审核检查失败')
+    console.log('审核检查失败:', error)
   }
   
   showAuditModal.value = true
@@ -327,36 +329,49 @@ const auditPrescription = async (row) => {
 
 const submitAudit = async () => {
   try {
-    await axios.put(`/pharmacy/prescriptions/${auditData.prescriptionId}/audit`, {
+    const response = await axios.put(`/pharmacy/prescriptions/${auditData.prescriptionId}/audit`, {
       status: auditData.result,
       comment: auditData.comment
     })
-    ElMessage.success('审核成功')
-    showAuditModal.value = false
-    loadPrescriptions()
+    if (response.code === 200) {
+      ElMessage.success('审核成功')
+      showAuditModal.value = false
+      loadPrescriptions()
+    } else {
+      ElMessage.error(response.message || '审核失败')
+    }
   } catch (error) {
-    ElMessage.error('审核失败')
+    ElMessage.error(error.response?.data?.message || '审核失败')
   }
 }
 
 const dispense = async (row) => {
   try {
-    await axios.post(`/pharmacy/prescriptions/${row.id}/dispense`)
-    ElMessage.success('操作成功')
-    loadPrescriptions()
+    const response = await axios.post(`/pharmacy/prescriptions/${row.id}/dispense`)
+    if (response.code === 200) {
+      ElMessage.success('操作成功')
+      loadPrescriptions()
+    } else {
+      ElMessage.error(response.message || '操作失败')
+    }
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(error.response?.data?.message || '操作失败')
   }
 }
 
-const returnDrug = (row) => {
+const returnDrug = async (row) => {
   if (confirm(`确定要执行退药操作吗？`)) {
-    axios.post(`/pharmacy/prescriptions/${row.id}/return`)
-      .then(() => {
+    try {
+      const response = await axios.post(`/pharmacy/prescriptions/${row.id}/return`)
+      if (response.code === 200) {
         ElMessage.success('退药成功')
         loadPrescriptions()
-      })
-      .catch(() => ElMessage.error('退药失败'))
+      } else {
+        ElMessage.error(response.message || '退药失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.response?.data?.message || '退药失败')
+    }
   }
 }
 

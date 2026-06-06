@@ -91,7 +91,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../../utils/axios'
 
 const router = useRouter()
 const pendingPrescriptions = ref(0)
@@ -108,37 +108,22 @@ const goTo = (path) => {
 const loadDashboardData = () => {
   axios.get('/dashboard/pharmacist')
     .then(response => {
-      const data = response.data.data
-      pendingPrescriptions.value = data.pendingPrescriptions || 8
-      todayDispensing.value = data.todayDispensing || 45
-      lowStockCount.value = data.lowStockCount || 5
-      specialDrugsCount.value = data.specialDrugsCount || 12
-      prescriptions.value = data.prescriptions || [
-        { id: 1, patientName: '张三', doctorName: '李医生', createTime: '09:15' },
-        { id: 2, patientName: '李四', doctorName: '王医生', createTime: '09:30' },
-        { id: 3, patientName: '王五', doctorName: '张医生', createTime: '10:00' }
-      ]
-      lowStockDrugs.value = data.lowStockDrugs || [
-        { drugName: '阿莫西林胶囊', spec: '0.5g*20粒', warehouse: '门诊药房', quantity: 15, minStock: 30 },
-        { drugName: '硝苯地平缓释片', spec: '20mg*30片', warehouse: '住院药房', quantity: 20, minStock: 50 },
-        { drugName: '奥美拉唑肠溶胶囊', spec: '20mg*14粒', warehouse: '中心药库', quantity: 8, minStock: 40 }
-      ]
+      const data = response.data
+      pendingPrescriptions.value = data.pendingPrescriptions
+      todayDispensing.value = data.todayDispensing
+      lowStockCount.value = data.lowStockCount
+      specialDrugsCount.value = data.specialDrugsCount
+      prescriptions.value = data.prescriptions || []
+      lowStockDrugs.value = data.lowStockDrugs || []
     })
-    .catch(() => {
-      pendingPrescriptions.value = 8
-      todayDispensing.value = 45
-      lowStockCount.value = 5
-      specialDrugsCount.value = 12
-      prescriptions.value = [
-        { id: 1, patientName: '张三', doctorName: '李医生', createTime: '09:15' },
-        { id: 2, patientName: '李四', doctorName: '王医生', createTime: '09:30' },
-        { id: 3, patientName: '王五', doctorName: '张医生', createTime: '10:00' }
-      ]
-      lowStockDrugs.value = [
-        { drugName: '阿莫西林胶囊', spec: '0.5g*20粒', warehouse: '门诊药房', quantity: 15, minStock: 30 },
-        { drugName: '硝苯地平缓释片', spec: '20mg*30片', warehouse: '住院药房', quantity: 20, minStock: 50 },
-        { drugName: '奥美拉唑肠溶胶囊', spec: '20mg*14粒', warehouse: '中心药库', quantity: 8, minStock: 40 }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      pendingPrescriptions.value = 0
+      todayDispensing.value = 0
+      lowStockCount.value = 0
+      specialDrugsCount.value = 0
+      prescriptions.value = []
+      lowStockDrugs.value = []
     })
 }
 

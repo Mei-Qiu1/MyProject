@@ -52,7 +52,7 @@
     <el-dialog title="新增采购申请" v-model="showAddModal" width="700px" @close="resetForm">
       <el-form :model="formData" ref="formRef" label-width="100px" :rules="formRules">
         <el-form-item label="申请单号" prop="requestNo">
-          <el-input v-model="formData.requestNo" disabled>{{ autoGenNo }}</el-input>
+          <el-input v-model="formData.requestNo" disabled>{{ currentRequestNo }}</el-input>
         </el-form-item>
         <el-form-item label="采购计划" prop="planId">
           <el-select v-model="formData.planId" clearable @change="onPlanChange" placeholder="非必填，选择后自动加载药品">
@@ -87,7 +87,9 @@
           </el-table-column>
           <el-table-column prop="amount" label="金额" />
           <el-table-column label="操作" width="80">
-            <el-button link type="danger" @click="removeDetail(scope.$index)">删除</el-button>
+            <template #default="scope">
+              <el-button link type="danger" @click="removeDetail(scope.$index)">删除</el-button>
+            </template>
           </el-table-column>
         </el-table>
         <el-button type="primary" @click="openDrugSelector">添加药品</el-button>
@@ -118,6 +120,10 @@
           small
           style="margin-top: 10px; justify-content: center;"
       />
+      <template #footer>
+        <el-button @click="showDrugSelector = false">取消</el-button>
+        <el-button type="primary" @click="confirmDrugSelection">确认添加</el-button>
+      </template>
     </el-dialog>
 
     <!-- 审批对话框 -->
@@ -186,7 +192,15 @@ const formRules = {
   supplierId: [{ required: true, message: '请选择供应商', trigger: 'change' }],
   remark: [{ required: true, message: '请输入备注', trigger: 'blur' }]
 }
-const autoGenNo = computed(() => 'PR' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + String(Math.random()).slice(-4))
+const currentRequestNo = ref('')
+
+const generateRequestNo = () => {
+  const now = new Date()
+  const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '')
+  const timeStr = now.getTime().toString().slice(-6)
+  const randomStr = String(Math.random()).slice(-3)
+  return 'PR' + dateStr + timeStr + randomStr
+}
 
 // 采购计划 & 供应商
 const plans = ref([])
@@ -311,6 +325,11 @@ const openDrugSelector = () => {
   showDrugSelector.value = true
 }
 
+const confirmDrugSelection = () => {
+  showDrugSelector.value = false
+  ElMessage.success('药品已添加到采购明细')
+}
+
 const handleDrugPageChange = (page) => {
   searchDrugs(page)
 }
@@ -355,7 +374,7 @@ const saveRequest = async () => {
       return
     }
     const payload = {
-      requestNo: autoGenNo.value,
+      requestNo: currentRequestNo.value,
       planId: formData.planId || null,
       supplierId: formData.supplierId,
       remark: formData.remark,
@@ -386,6 +405,8 @@ const saveRequest = async () => {
 }
 
 const resetForm = () => {
+  currentRequestNo.value = generateRequestNo()
+  formData.requestNo = currentRequestNo.value
   formData.planId = null
   formData.supplierId = null
   formData.remark = ''
@@ -415,17 +436,29 @@ const submitAudit = async () => {
 
 // 生成订单
 const createOrder = (row) => {
+  const requestId = parseInt(row.id)
+  if (!requestId || requestId <= 0) {
+    ElMessage.error('无效的申请单ID')
+    return
+  }
   ElMessageBox.confirm(`确定要为申请单 ${row.requestNo} 生成采购订单吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'info'
   }).then(() => {
-    axios.post(`/purchase/orders/from-request/${row.id}`)
-        .then(() => {
-          ElMessage.success('订单生成成功')
-          loadRequests()
+    axios.post(`/purchase/orders/from-request/${requestId}`)
+        .then((res) => {
+          if (res.code === 200) {
+            ElMessage.success('订单生成成功')
+            loadRequests()
+          } else {
+            ElMessage.error(res.message || '订单生成失败')
+          }
         })
-        .catch(() => ElMessage.error('订单生成失败'))
+        .catch((error) => {
+          const msg = error.response?.data?.message || error.message || '订单生成失败'
+          ElMessage.error(msg)
+        })
   }).catch(() => {})
 }
 

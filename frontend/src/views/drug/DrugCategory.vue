@@ -16,8 +16,8 @@
         <span class="tree-node">
           <span>{{ node.label }}</span>
           <span class="tree-actions">
-            <el-button type="text" size="small" @click="editCategory(data)">编辑</el-button>
-            <el-button type="text" size="small" @click="deleteCategory(data)">删除</el-button>
+            <el-button type="link" size="small" @click="editCategory(data)">编辑</el-button>
+            <el-button type="link" size="small" @click="deleteCategory(data)">删除</el-button>
           </span>
         </span>
       </template>

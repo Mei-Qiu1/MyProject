@@ -10,10 +10,10 @@ INSERT IGNORE INTO sys_role (role_name, role_code, description, status, create_t
 ('药剂科主任', 'PHARMACY_DIRECTOR', '药剂科负责人，负责采购审批、特殊药品管理和统计报表', 1, NOW(), NOW());
 
 -- 初始化管理员用户（密码：admin123）
---INSERT INTO sys_user (username, password, real_name, phone, email, role, status, create_time, update_time) VALUES
---('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '系统管理员', '13800138000', 'admin@hospital.com', 'ADMIN', 1, NOW(), NOW()),
---('pharmacist', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张药师', '13800138001', 'pharmacist@hospital.com', 'PHARMACIST', 1, NOW(), NOW()),
---('purchaser', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '李采购', '13800138002', 'purchaser@hospital.com', 'PURCHASER', 1, NOW(), NOW());
+-- INSERT INTO sys_user (username, password, real_name, phone, email, role, status, create_time, update_time) VALUES
+-- ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '系统管理员', '13800138000', 'admin@hospital.com', 'ADMIN', 1, NOW(), NOW()),
+-- ('pharmacist', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张药师', '13800138001', 'pharmacist@hospital.com', 'PHARMACIST', 1, NOW(), NOW()),
+-- ('purchaser', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '李采购', '13800138002', 'purchaser@hospital.com', 'PURCHASER', 1, NOW(), NOW());
 
 -- 初始化药品分类
 INSERT INTO drug_category (category_name, category_code, parent_id, type, sort_order, status, remark, create_time, update_time) VALUES
@@ -35,13 +35,47 @@ INSERT INTO warehouse (warehouse_name, warehouse_code, type, location, status, r
 ('特殊药品库', 'WH004', 3, '门诊楼B2层', 1, '毒麻精放药品专用仓库', NOW(), NOW());
 
 -- 初始化示例药品数据
-INSERT INTO drug (drug_code, drug_name, spec, dosage_form, manufacturer, approval_number, category_id, manage_category_id, unit, is_special, purchase_price, retail_price, wholesale_price, status, remark, create_time, update_time) VALUES
-('D0001', '阿莫西林胶囊', '0.5g*20粒', '胶囊剂', '华北制药集团', '国药准字H13024138', 1, 5, '盒', 0, 15.00, 25.00, 20.00, 1, '广谱抗生素', NOW(), NOW()),
-('D0002', '硝苯地平缓释片', '20mg*30片', '片剂', '拜耳医药', '国药准字J20180025', 2, 5, '盒', 0, 35.00, 58.00, 45.00, 1, '降压药', NOW(), NOW()),
-('D0003', '奥美拉唑肠溶胶囊', '20mg*14粒', '胶囊剂', '阿斯利康', '国药准字H20030412', 3, 5, '盒', 0, 42.00, 68.00, 55.00, 1, '胃药', NOW(), NOW()),
-('D0004', '沙丁胺醇气雾剂', '100μg*200揿', '气雾剂', '葛兰素史克', '国药准字H10940033', 4, 5, '瓶', 0, 28.00, 45.00, 35.00, 1, '哮喘用药', NOW(), NOW()),
-('D0005', '吗啡注射液', '10mg/1ml*5支', '注射剂', '东北制药', '国药准字H21022436', 1, 7, '盒', 1, 8.50, 15.00, 12.00, 1, '麻醉药品', NOW(), NOW()),
-('D0006', '地西泮片', '2.5mg*20片', '片剂', '天津药业', '国药准字H12020247', 4, 8, '瓶', 1, 5.00, 10.00, 8.00, 1, '精神药品', NOW(), NOW());
+INSERT INTO drug (drug_code, drug_name, spec, dosage_form, manufacturer, approval_number, category_id, manage_category_id, unit, is_special, purchase_price, retail_price, wholesale_price, min_stock, status, remark, create_time, update_time) VALUES
+('D0001', '阿莫西林胶囊', '0.5g*20粒', '胶囊剂', '华北制药集团', '国药准字H13024138', 1, 5, '盒', 0, 15.00, 25.00, 20.00, 100, 1, '广谱抗生素', NOW(), NOW()),
+('D0002', '硝苯地平缓释片', '20mg*30片', '片剂', '拜耳医药', '国药准字J20180025', 2, 5, '盒', 0, 35.00, 58.00, 45.00, 80, 1, '降压药', NOW(), NOW()),
+('D0003', '奥美拉唑肠溶胶囊', '20mg*14粒', '胶囊剂', '阿斯利康', '国药准字H20030412', 3, 5, '盒', 0, 42.00, 68.00, 55.00, 60, 1, '胃药', NOW(), NOW()),
+('D0004', '沙丁胺醇气雾剂', '100μg*200揿', '气雾剂', '葛兰素史克', '国药准字H10940033', 4, 5, '瓶', 0, 28.00, 45.00, 35.00, 50, 1, '哮喘用药', NOW(), NOW()),
+('D0005', '吗啡注射液', '10mg/1ml*5支', '注射剂', '东北制药', '国药准字H21022436', 1, 7, '盒', 1, 8.50, 15.00, 12.00, 30, 1, '麻醉药品', NOW(), NOW()),
+('D0006', '地西泮片', '2.5mg*20片', '片剂', '天津药业', '国药准字H12020247', 4, 8, '瓶', 1, 5.00, 10.00, 8.00, 20, 1, '精神药品', NOW(), NOW());
+
+-- 初始化采购计划数据
+INSERT INTO purchase_plan (plan_no, plan_name, plan_type, plan_date, status, remark, create_time, update_time) VALUES
+('PL20240601001', '2024年6月常规采购计划', 1, '2024-06-01', 1, '月度常规药品采购', NOW(), NOW()),
+('PL20240601002', '2024年6月特殊药品采购计划', 2, '2024-06-01', 1, '毒麻精放药品专项采购', NOW(), NOW()),
+('PL20240615003', '2024年6月紧急采购计划', 3, '2024-06-15', 1, '库存不足紧急补充', NOW(), NOW());
+
+-- 初始化采购计划明细数据
+INSERT INTO purchase_plan_detail (plan_id, drug_id, drug_name, quantity) VALUES
+(1, 1, '阿莫西林胶囊', 500),
+(1, 2, '硝苯地平缓释片', 300),
+(1, 3, '奥美拉唑肠溶胶囊', 200),
+(1, 4, '沙丁胺醇气雾剂', 150),
+(2, 5, '吗啡注射液', 100),
+(2, 6, '地西泮片', 200),
+(3, 1, '阿莫西林胶囊', 200),
+(3, 2, '硝苯地平缓释片', 100);
+
+-- 初始化采购申请数据
+INSERT INTO purchase_request (request_no, plan_id, supplier_id, status, remark, create_time, update_time) VALUES
+('PR20240605001', 1, 1, 2, '月度常规采购', '2024-06-05 09:00:00', '2024-06-05 10:00:00'),
+('PR20240610002', 2, 3, 2, '特殊药品采购', '2024-06-10 10:30:00', '2024-06-10 11:30:00'),
+('PR20240615003', 3, 2, 1, '紧急补充', '2024-06-15 14:00:00', '2024-06-15 14:00:00');
+
+-- 初始化采购申请明细数据
+INSERT INTO purchase_request_detail (request_id, drug_id, drug_name, spec, quantity, unit, unit_price, amount) VALUES
+(1, 1, '阿莫西林胶囊', '0.5g*20粒', 500, '盒', 15.00, 7500.00),
+(1, 2, '硝苯地平缓释片', '20mg*30片', 300, '盒', 35.00, 10500.00),
+(1, 3, '奥美拉唑肠溶胶囊', '20mg*14粒', 200, '盒', 42.00, 8400.00),
+(1, 4, '沙丁胺醇气雾剂', '100μg*200揿', 150, '瓶', 28.00, 4200.00),
+(2, 5, '吗啡注射液', '10mg/1ml*5支', 100, '盒', 8.50, 850.00),
+(2, 6, '地西泮片', '2.5mg*20片', 200, '瓶', 5.00, 1000.00),
+(3, 1, '阿莫西林胶囊', '0.5g*20粒', 200, '盒', 15.00, 3000.00),
+(3, 2, '硝苯地平缓释片', '20mg*30片', 100, '盒', 35.00, 3500.00);
 
 -- 初始化供应商数据
 INSERT INTO supplier (supplier_name, supplier_code, contact_name, phone, address, qualification_no, qualification_expire_date, bank_account, cooperation_status, status, remark, create_time, update_time) VALUES

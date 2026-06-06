@@ -19,8 +19,8 @@
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button type="text" @click="editRole(scope.row)">编辑</el-button>
-          <el-button type="text" @click="viewPermissions(scope.row)">查看设置</el-button>
+          <el-button type="link" @click="editRole(scope.row)">编辑</el-button>
+          <el-button type="link" @click="viewPermissions(scope.row)">查看设置</el-button>
         </template>
       </el-table-column>
     </el-table>

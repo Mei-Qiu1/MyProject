@@ -77,7 +77,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../../utils/axios'
 
 const router = useRouter()
 const userCount = ref(0)
@@ -93,29 +93,20 @@ const goTo = (path) => {
 const loadDashboardData = () => {
   axios.get('/dashboard/admin')
     .then(response => {
-      const data = response.data.data
-      userCount.value = data.userCount || 12
-      drugCount.value = data.drugCount || 356
-      inventoryCount.value = data.inventoryCount || 12580
-      orderCount.value = data.orderCount || 24
-      recentLogs.value = data.recentLogs || [
-        { id: 1, action: '创建新用户', operator: 'admin', time: '10分钟前' },
-        { id: 2, action: '新增药品记录', operator: 'admin', time: '30分钟前' },
-        { id: 3, action: '审核采购订单', operator: 'admin', time: '1小时前' },
-        { id: 4, action: '更新库存信息', operator: 'admin', time: '2小时前' }
-      ]
+      const data = response.data
+      userCount.value = data.userCount
+      drugCount.value = data.drugCount
+      inventoryCount.value = data.inventoryCount
+      orderCount.value = data.orderCount
+      recentLogs.value = data.recentLogs || []
     })
-    .catch(() => {
-      userCount.value = 12
-      drugCount.value = 356
-      inventoryCount.value = 12580
-      orderCount.value = 24
-      recentLogs.value = [
-        { id: 1, action: '创建新用户', operator: 'admin', time: '10分钟前' },
-        { id: 2, action: '新增药品记录', operator: 'admin', time: '30分钟前' },
-        { id: 3, action: '审核采购订单', operator: 'admin', time: '1小时前' },
-        { id: 4, action: '更新库存信息', operator: 'admin', time: '2小时前' }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      userCount.value = 0
+      drugCount.value = 0
+      inventoryCount.value = 0
+      orderCount.value = 0
+      recentLogs.value = []
     })
 }
 

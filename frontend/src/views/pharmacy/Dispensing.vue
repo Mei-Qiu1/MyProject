@@ -112,7 +112,7 @@ const selectPrescription = (row) => {
   selectedPrescription.value = row
 }
 
-const confirmDispensing = () => {
+const confirmDispensing = async () => {
   if (!selectedPrescription.value) {
     ElMessage.warning('请选择处方')
     return
@@ -124,30 +124,40 @@ const confirmDispensing = () => {
     return
   }
   
-  axios.post(`/pharmacy/prescriptions/${selectedPrescription.value.id}/dispense`)
-    .then(() => {
+  try {
+    const response = await axios.post(`/pharmacy/prescriptions/${selectedPrescription.value.id}/dispense`)
+    if (response.code === 200) {
       ElMessage.success('调配完成')
       selectedPrescription.value = null
       loadPending()
       loadRecent()
-    })
-    .catch(() => ElMessage.error('调配失败'))
+    } else {
+      ElMessage.error(response.message || '调配失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '调配失败')
+  }
 }
 
-const confirmDispense = () => {
+const confirmDispense = async () => {
   if (!selectedPrescription.value) {
     ElMessage.warning('请选择处方')
     return
   }
   
-  axios.post(`/pharmacy/prescriptions/${selectedPrescription.value.id}/dispense`)
-    .then(() => {
+  try {
+    const response = await axios.post(`/pharmacy/prescriptions/${selectedPrescription.value.id}/dispense`)
+    if (response.code === 200) {
       ElMessage.success('发药完成')
       selectedPrescription.value = null
       loadPending()
       loadRecent()
-    })
-    .catch(() => ElMessage.error('发药失败'))
+    } else {
+      ElMessage.error(response.message || '发药失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '发药失败')
+  }
 }
 
 onMounted(() => {

@@ -42,52 +42,21 @@ public class DrugDeliveryServiceImpl implements DrugDeliveryService {
     @Override
     public IPage<DrugDelivery> page(int page, int size, String keyword, Integer status, String department) {
         Page<DrugDelivery> pageParam = new Page<>(page, size);
-        List<DrugDelivery> records = new java.util.ArrayList<>();
+        LambdaQueryWrapper<DrugDelivery> wrapper = new LambdaQueryWrapper<>();
         
-        DrugDelivery delivery1 = new DrugDelivery();
-        delivery1.setId(1L);
-        delivery1.setDeliveryNo("DL20240602001");
-        delivery1.setOrderId(1L);
-        delivery1.setPatientId("P001");
-        delivery1.setPatientName("张三");
-        delivery1.setDepartment("内科");
-        delivery1.setBedNo("12");
-        delivery1.setStatus(1);
-        delivery1.setCreateTime(java.time.LocalDateTime.parse("2024-06-02T08:30:00"));
-        delivery1.setUpdateTime(java.time.LocalDateTime.parse("2024-06-02T08:30:00"));
-        records.add(delivery1);
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(DrugDelivery::getDeliveryNo, keyword)
+                    .or().like(DrugDelivery::getPatientName, keyword));
+        }
+        if (status != null) {
+            wrapper.eq(DrugDelivery::getStatus, status);
+        }
+        if (department != null && !department.isEmpty()) {
+            wrapper.eq(DrugDelivery::getDepartment, department);
+        }
         
-        DrugDelivery delivery2 = new DrugDelivery();
-        delivery2.setId(2L);
-        delivery2.setDeliveryNo("DL20240604002");
-        delivery2.setOrderId(2L);
-        delivery2.setPatientId("P002");
-        delivery2.setPatientName("李四");
-        delivery2.setDepartment("外科");
-        delivery2.setBedNo("25");
-        delivery2.setStatus(2);
-        delivery2.setSigner("王护士");
-        delivery2.setSignTime(java.time.LocalDateTime.parse("2024-06-04T10:00:00"));
-        delivery2.setCreateTime(java.time.LocalDateTime.parse("2024-06-04T09:30:00"));
-        delivery2.setUpdateTime(java.time.LocalDateTime.parse("2024-06-04T10:00:00"));
-        records.add(delivery2);
-        
-        DrugDelivery delivery3 = new DrugDelivery();
-        delivery3.setId(3L);
-        delivery3.setDeliveryNo("DL20240606003");
-        delivery3.setOrderId(3L);
-        delivery3.setPatientId("P003");
-        delivery3.setPatientName("王五");
-        delivery3.setDepartment("内科");
-        delivery3.setBedNo("15");
-        delivery3.setStatus(1);
-        delivery3.setCreateTime(java.time.LocalDateTime.parse("2024-06-06T10:30:00"));
-        delivery3.setUpdateTime(java.time.LocalDateTime.parse("2024-06-06T10:30:00"));
-        records.add(delivery3);
-        
-        pageParam.setRecords(records);
-        pageParam.setTotal(records.size());
-        return pageParam;
+        wrapper.orderByDesc(DrugDelivery::getCreateTime);
+        return drugDeliveryMapper.selectPage(pageParam, wrapper);
     }
 
     @Override
@@ -105,7 +74,39 @@ public class DrugDeliveryServiceImpl implements DrugDeliveryService {
     @Override
     @Transactional
     public void create(Long orderId) {
-        // 模拟生成配送单，不实际操作数据库
+        // 从医嘱创建配送单
+        MedicalOrder order = medicalOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new RuntimeException("医嘱不存在");
+        }
+        
+        // 创建配送单
+        DrugDelivery delivery = new DrugDelivery();
+        delivery.setDeliveryNo("DL" + System.currentTimeMillis());
+        delivery.setOrderId(orderId);
+        delivery.setPatientId(order.getPatientId());
+        delivery.setPatientName(order.getPatientName());
+        delivery.setDepartment(order.getDepartment());
+        delivery.setBedNo(order.getBedNo());
+        delivery.setStatus(1); // 待配送
+        delivery.setCreateTime(LocalDateTime.now());
+        delivery.setUpdateTime(LocalDateTime.now());
+        drugDeliveryMapper.insert(delivery);
+        
+        // 从医嘱明细创建配送明细
+        LambdaQueryWrapper<MedicalOrderDetail> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MedicalOrderDetail::getOrderId, orderId);
+        List<MedicalOrderDetail> orderDetails = medicalOrderDetailMapper.selectList(wrapper);
+        
+        for (MedicalOrderDetail detail : orderDetails) {
+            DeliveryDetail deliveryDetail = new DeliveryDetail();
+            deliveryDetail.setDeliveryId(delivery.getId());
+            deliveryDetail.setDrugId(detail.getDrugId());
+            deliveryDetail.setDrugName(detail.getDrugName());
+            deliveryDetail.setSpec(detail.getSpec());
+            deliveryDetail.setQuantity(detail.getQuantity());
+            deliveryDetailMapper.insert(deliveryDetail);
+        }
     }
 
     @Override

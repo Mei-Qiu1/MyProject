@@ -78,7 +78,6 @@ public class UserController {
             if (user.getPassword() == null || user.getPassword().isEmpty()) {
                 return Result.fail("密码不能为空");
             }
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
             userService.save(user);
             logService.save(buildLog("新增用户", "POST",
                     "用户名: " + user.getUsername() + ", 姓名: " + user.getRealName(),

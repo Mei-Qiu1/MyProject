@@ -68,7 +68,7 @@
             <el-table-column prop="createTime" label="申请时间" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button size="small" type="primary">审批</el-button>
+                <el-button size="small" type="primary" @click="openAuditDialog(scope.row)">审批</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -89,12 +89,38 @@
       </el-col>
     </el-row>
   </div>
+
+  <!-- 审批对话框 -->
+  <el-dialog title="审批采购申请" v-model="showAuditDialog" width="400px">
+    <el-form :model="auditForm" label-width="80px">
+      <el-form-item label="药品名称">
+        <span>{{ currentRequest?.drugName }}</span>
+      </el-form-item>
+      <el-form-item label="申请数量">
+        <span>{{ currentRequest?.quantity }}</span>
+      </el-form-item>
+      <el-form-item label="审批结果">
+        <el-select v-model="auditForm.status">
+          <el-option label="通过" :value="2" />
+          <el-option label="拒绝" :value="3" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="审批意见">
+        <el-textarea v-model="auditForm.comment" rows="3"></el-textarea>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showAuditDialog = false">取消</el-button>
+      <el-button type="primary" @click="handleAudit">确认审批</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import axios from '../../utils/axios'
 
 const router = useRouter()
 const pendingApprovals = ref(0)
@@ -104,6 +130,14 @@ const drugCount = ref(0)
 const pendingRequests = ref([])
 const specialDrugStock = ref([])
 
+// 审批对话框相关
+const showAuditDialog = ref(false)
+const currentRequest = ref(null)
+const auditForm = ref({
+  status: 2,
+  comment: ''
+})
+
 const goTo = (path) => {
   router.push(path)
 }
@@ -111,38 +145,57 @@ const goTo = (path) => {
 const loadDashboardData = () => {
   axios.get('/dashboard/pharmacy-director')
     .then(response => {
-      const data = response.data.data
-      pendingApprovals.value = data.pendingApprovals || 6
-      specialDrugs.value = data.specialDrugs || 12
-      monthlyAmount.value = data.monthlyAmount || '¥156,800'
-      drugCount.value = data.drugCount || 356
-      pendingRequests.value = data.pendingRequests || [
-        { id: 1, drugName: '阿莫西林胶囊', quantity: 200, applicant: '张药师', createTime: '09:00' },
-        { id: 2, drugName: '硝苯地平缓释片', quantity: 150, applicant: '李药师', createTime: '09:30' },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', quantity: 100, applicant: '王药师', createTime: '10:00' }
-      ]
-      specialDrugStock.value = data.specialDrugStock || [
-        { drugName: '吗啡注射液', spec: '10mg/1ml*5支', category: '麻醉药品', quantity: 30, warehouse: '特殊药品库' },
-        { drugName: '地西泮片', spec: '2.5mg*20片', category: '精神药品', quantity: 50, warehouse: '特殊药品库' },
-        { drugName: '哌替啶注射液', spec: '50mg/2ml*5支', category: '麻醉药品', quantity: 25, warehouse: '特殊药品库' }
-      ]
+      const data = response.data
+      pendingApprovals.value = data.pendingApprovals
+      specialDrugs.value = data.specialDrugs
+      monthlyAmount.value = data.monthlyAmount || '¥0'
+      drugCount.value = data.drugCount
+      pendingRequests.value = data.pendingRequests || []
+      specialDrugStock.value = data.specialDrugStock || []
     })
-    .catch(() => {
-      pendingApprovals.value = 6
-      specialDrugs.value = 12
-      monthlyAmount.value = '¥156,800'
-      drugCount.value = 356
-      pendingRequests.value = [
-        { id: 1, drugName: '阿莫西林胶囊', quantity: 200, applicant: '张药师', createTime: '09:00' },
-        { id: 2, drugName: '硝苯地平缓释片', quantity: 150, applicant: '李药师', createTime: '09:30' },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', quantity: 100, applicant: '王药师', createTime: '10:00' }
-      ]
-      specialDrugStock.value = [
-        { drugName: '吗啡注射液', spec: '10mg/1ml*5支', category: '麻醉药品', quantity: 30, warehouse: '特殊药品库' },
-        { drugName: '地西泮片', spec: '2.5mg*20片', category: '精神药品', quantity: 50, warehouse: '特殊药品库' },
-        { drugName: '哌替啶注射液', spec: '50mg/2ml*5支', category: '麻醉药品', quantity: 25, warehouse: '特殊药品库' }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      pendingApprovals.value = 0
+      specialDrugs.value = 0
+      monthlyAmount.value = '¥0'
+      drugCount.value = 0
+      pendingRequests.value = []
+      specialDrugStock.value = []
     })
+}
+
+const openAuditDialog = (row) => {
+  currentRequest.value = row
+  auditForm.value = {
+    status: 2,
+    comment: ''
+  }
+  showAuditDialog.value = true
+}
+
+const handleAudit = () => {
+  if (!currentRequest.value?.id) {
+    ElMessage.error('请选择要审批的申请')
+    return
+  }
+  
+  axios.put(`/purchase/requests/${currentRequest.value.id}/audit`, {
+    status: auditForm.value.status,
+    comment: auditForm.value.comment
+  })
+  .then(response => {
+    if (response.code === 200) {
+      ElMessage.success('审批成功')
+      showAuditDialog.value = false
+      loadDashboardData()
+    } else {
+      ElMessage.error(response.message || '审批失败')
+    }
+  })
+  .catch(error => {
+    console.error('Audit failed:', error)
+    ElMessage.error('审批失败')
+  })
 }
 
 onMounted(() => {

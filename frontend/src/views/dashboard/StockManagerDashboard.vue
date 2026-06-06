@@ -64,7 +64,7 @@
             <el-table-column prop="quantity" label="当前库存" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button size="small" type="primary">补货</el-button>
+                <el-button size="small" type="primary" @click="handleReplenish(scope.row)">补货</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -90,7 +90,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../../utils/axios'
 
 const router = useRouter()
 const totalInventory = ref(0)
@@ -104,40 +104,29 @@ const goTo = (path) => {
   router.push(path)
 }
 
+const handleReplenish = (row) => {
+  router.push('/inventory/list')
+}
+
 const loadDashboardData = () => {
   axios.get('/dashboard/stock-manager')
     .then(response => {
-      const data = response.data.data
-      totalInventory.value = data.totalInventory || 12580
-      warningCount.value = data.warningCount || 5
-      expireWarning.value = data.expireWarning || 3
-      warehouseCount.value = data.warehouseCount || 4
-      warningDrugs.value = data.warningDrugs || [
-        { id: 1, drugName: '阿莫西林胶囊', warehouse: '门诊药房', quantity: 15 },
-        { id: 2, drugName: '硝苯地平缓释片', warehouse: '住院药房', quantity: 20 },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', warehouse: '中心药库', quantity: 8 }
-      ]
-      expireDrugs.value = data.expireDrugs || [
-        { drugName: '阿莫西林胶囊', spec: '0.5g*20粒', expireDate: '2025-06-30', warehouse: '门诊药房', quantity: 50 },
-        { drugName: '沙丁胺醇气雾剂', spec: '100μg*200揿', expireDate: '2025-07-15', warehouse: '中心药库', quantity: 30 },
-        { drugName: '地西泮片', spec: '2.5mg*20片', expireDate: '2025-05-15', warehouse: '特殊药品库', quantity: 20 }
-      ]
+      const data = response.data
+      totalInventory.value = data.totalInventory
+      warningCount.value = data.warningCount
+      expireWarning.value = data.expireWarning
+      warehouseCount.value = data.warehouseCount
+      warningDrugs.value = data.warningDrugs || []
+      expireDrugs.value = data.expireDrugs || []
     })
-    .catch(() => {
-      totalInventory.value = 12580
-      warningCount.value = 5
-      expireWarning.value = 3
-      warehouseCount.value = 4
-      warningDrugs.value = [
-        { id: 1, drugName: '阿莫西林胶囊', warehouse: '门诊药房', quantity: 15 },
-        { id: 2, drugName: '硝苯地平缓释片', warehouse: '住院药房', quantity: 20 },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', warehouse: '中心药库', quantity: 8 }
-      ]
-      expireDrugs.value = [
-        { drugName: '阿莫西林胶囊', spec: '0.5g*20粒', expireDate: '2025-06-30', warehouse: '门诊药房', quantity: 50 },
-        { drugName: '沙丁胺醇气雾剂', spec: '100μg*200揿', expireDate: '2025-07-15', warehouse: '中心药库', quantity: 30 },
-        { drugName: '地西泮片', spec: '2.5mg*20片', expireDate: '2025-05-15', warehouse: '特殊药品库', quantity: 20 }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      totalInventory.value = 0
+      warningCount.value = 0
+      expireWarning.value = 0
+      warehouseCount.value = 0
+      warningDrugs.value = []
+      expireDrugs.value = []
     })
 }
 

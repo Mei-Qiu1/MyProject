@@ -22,4 +22,13 @@ public interface MedicalOrderMapper extends BaseMapper<MedicalOrder> {
     
     @Select("SELECT * FROM medical_order WHERE status = 0 AND doctor_id = #{doctorId} ORDER BY order_time DESC LIMIT #{limit}")
     List<MedicalOrder> selectPendingByDoctor(@Param("doctorId") Long doctorId, @Param("limit") Integer limit);
+
+    @Select("SELECT COUNT(*) FROM medical_order WHERE DATE(order_time) = CURDATE()")
+    long countTodayOrders();
+
+    @Select("SELECT COUNT(DISTINCT patient_id) FROM medical_order WHERE DATE(order_time) = CURDATE()")
+    long countTodayPatients();
+
+    @Select("SELECT * FROM medical_order WHERE DATE(order_time) = CURDATE() ORDER BY order_time DESC LIMIT #{limit}")
+    List<MedicalOrder> selectTodayOrders(@Param("limit") Integer limit);
 }

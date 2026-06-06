@@ -70,4 +70,16 @@ public interface PurchaseRequestMapper extends BaseMapper<PurchaseRequest> {
                                                     @Param("keyword") String keyword,
                                                     @Param("status") Integer status);
 
+    @Select("SELECT COUNT(*) FROM purchase_request WHERE status = #{status}")
+    long countByStatus(@Param("status") Integer status);
+
+    @Select("SELECT * FROM purchase_request WHERE status IN (0, 1) ORDER BY create_time DESC LIMIT 10")
+    List<PurchaseRequest> selectPendingRequests();
+
+    @Select("SELECT * FROM purchase_request WHERE status = 2 ORDER BY create_time DESC LIMIT 10")
+    List<PurchaseRequest> selectApprovedRequests();
+
+    @Select("SELECT * FROM purchase_request WHERE status = 1 ORDER BY create_time DESC LIMIT #{limit}")
+    List<PurchaseRequest> selectPendingForApproval(@Param("limit") Integer limit);
+
 }

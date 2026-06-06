@@ -30,7 +30,6 @@ public class Inventory {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
-    // 非数据库字段，用于连表查询
     @TableField(exist = false)
     private String drugCode;
 
@@ -43,13 +42,33 @@ public class Inventory {
     @TableField(exist = false)
     private String warehouseName;
 
-    // 在 Inventory.java 中添加
     @TableField(exist = false)
-    private String unit;      // 药品单位
+    private String unit;
 
-    // 前端使用 currentStock，实际对应 quantity
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getDrugId() { return drugId; }
+    public void setDrugId(Long drugId) { this.drugId = drugId; }
+    public String getBatchNo() { return batchNo; }
+    public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
+    public LocalDateTime getProductionDate() { return productionDate; }
+    public void setProductionDate(LocalDateTime productionDate) { this.productionDate = productionDate; }
+    public LocalDateTime getExpireDate() { return expireDate; }
+    public void setExpireDate(LocalDateTime expireDate) { this.expireDate = expireDate; }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public LocalDateTime getCreateTime() { return createTime; }
+    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+    public LocalDateTime getUpdateTime() { return updateTime; }
+    public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
+
     public Integer getCurrentStock() {
         return getQuantity();
     }
-
 }

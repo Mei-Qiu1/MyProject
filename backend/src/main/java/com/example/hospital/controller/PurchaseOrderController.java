@@ -27,9 +27,18 @@ public class PurchaseOrderController {
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String keyword,
                           @RequestParam(required = false) Integer status) {
-        IPage<PurchaseOrder> orderPage = purchaseOrderService.page(page, size, keyword, status);
-        return Result.success(PageResult.of(orderPage.getRecords(), orderPage.getTotal(),
-                (int) orderPage.getCurrent(), (int) orderPage.getSize()));
+        try {
+            // 参数校验
+            if (page < 1) page = 1;
+            if (size < 1 || size > 100) size = 10;
+            if (status != null && status < 0) status = null;
+            
+            IPage<PurchaseOrder> orderPage = purchaseOrderService.page(page, size, keyword, status);
+            return Result.success(PageResult.of(orderPage.getRecords(), orderPage.getTotal(),
+                    (int) orderPage.getCurrent(), (int) orderPage.getSize()));
+        } catch (Exception e) {
+            return Result.fail(500, "加载订单列表失败: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -85,7 +94,16 @@ public class PurchaseOrderController {
 
     @PostMapping("/from-request/{requestId}")
     public Result<?> createFromRequest(@PathVariable Long requestId) {
-        purchaseOrderService.createFromRequest(requestId);
-        return Result.success("订单已生成");
+        if (requestId == null || requestId <= 0) {
+            return Result.fail(400, "无效的申请单ID");
+        }
+        try {
+            purchaseOrderService.createFromRequest(requestId);
+            return Result.success("订单已生成");
+        } catch (IllegalArgumentException e) {
+            return Result.fail(400, e.getMessage());
+        } catch (Exception e) {
+            return Result.fail(500, "生成订单失败：" + e.getMessage());
+        }
     }
 }

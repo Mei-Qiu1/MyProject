@@ -13,11 +13,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryMapper inventoryMapper;
+    
+    // 原子计数器，用于保证同一毫秒内的唯一性
+    private final AtomicLong counter = new AtomicLong(0);
+    // 上一次生成批次号的时间戳
+    private volatile long lastTimestamp = 0;
 
     public InventoryServiceImpl(InventoryMapper inventoryMapper) {
         this.inventoryMapper = inventoryMapper;
@@ -31,9 +38,50 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void save(Inventory inventory) {
+        // 自动生成批次号
+        if (inventory.getBatchNo() == null || inventory.getBatchNo().isEmpty()) {
+            inventory.setBatchNo(generateBatchNo());
+        }
+        // 设置默认状态
+        if (inventory.getStatus() == null) {
+            inventory.setStatus(1);
+        }
         inventory.setCreateTime(LocalDateTime.now());
         inventory.setUpdateTime(LocalDateTime.now());
         inventoryMapper.insert(inventory);
+    }
+    
+    private String generateBatchNo() {
+        long now = System.currentTimeMillis();
+        
+        // 如果当前时间戳与上次相同，计数器递增；否则重置计数器
+        if (now == lastTimestamp) {
+            counter.incrementAndGet();
+        } else {
+            counter.set(0);
+            lastTimestamp = now;
+        }
+        
+        // 获取计数器值（确保在同一毫秒内唯一）
+        long sequence = counter.get();
+        
+        // 生成批次号：B + 日期(6位) + 时间(6位) + 毫秒(3位) + 计数器(3位)
+        LocalDateTime dateTime = LocalDateTime.now();
+        String dateStr = dateTime.format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String timeStr = dateTime.format(DateTimeFormatter.ofPattern("HHmmss"));
+        
+        // 毫秒的后3位
+        String millisStr = String.format("%03d", now % 1000);
+        // 计数器（最多3位，超过则用UUID补充）
+        String seqStr;
+        if (sequence < 1000) {
+            seqStr = String.format("%03d", sequence);
+        } else {
+            // 如果同一毫秒内超过1000次，使用UUID的最后几位保证唯一性
+            seqStr = UUID.randomUUID().toString().substring(0, 3).toUpperCase();
+        }
+        
+        return "B" + dateStr + timeStr + millisStr + seqStr;
     }
 
     @Override

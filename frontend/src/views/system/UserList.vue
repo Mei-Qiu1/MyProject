@@ -30,10 +30,10 @@
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column label="操作" width="230">
         <template #default="scope">
-          <!-- 使用 type="text" 保留蓝色文字效果，并添加样式避免弃用警告 -->
-          <el-button type="text" class="action-btn" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button type="text" class="action-btn" @click="openRoleDialog(scope.row)">权限管理</el-button>
-          <el-button type="text" class="action-btn" @click="deleteUser(scope.row)">删除</el-button>
+          <!-- 使用 type="link" 替代 type="text" -->
+          <el-button type="link" class="action-btn" @click="openEditDialog(scope.row)">编辑</el-button>
+          <el-button type="link" class="action-btn" @click="openRoleDialog(scope.row)">权限管理</el-button>
+          <el-button type="link" class="action-btn" @click="deleteUser(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -171,7 +171,8 @@ const formData = reactive({
   password: '',
   phone: '',
   email: '',
-  role: 'USER'
+  role: 'USER',
+  status: 1  // 默认启用状态
 })
 
 const roleForm = reactive({
@@ -271,9 +272,35 @@ const openEditDialog = (row) => {
   showAddModal.value = true
 }
 
+// 验证电话号码格式
+const validatePhone = (phone) => {
+  if (!phone) return true
+  const phoneRegex = /^1[3-9]\d{9}$/
+  return phoneRegex.test(phone)
+}
+
+// 验证邮箱格式
+const validateEmail = (email) => {
+  if (!email) return true
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
 // 保存用户（新增或编辑）
 const saveUser = async () => {
   try {
+    // 验证电话格式
+    if (!validatePhone(formData.phone)) {
+      ElMessage.error('请输入正确的手机号码（11位数字，以1开头）')
+      return
+    }
+    
+    // 验证邮箱格式
+    if (!validateEmail(formData.email)) {
+      ElMessage.error('请输入正确的邮箱格式')
+      return
+    }
+    
     if (isEdit.value) {
       await axios.put(`/system/users/${formData.id}`, formData)
       ElMessage.success('更新成功')

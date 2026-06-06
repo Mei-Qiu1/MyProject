@@ -12,8 +12,18 @@ $classpath = $classpathItems -join ";"
 Write-Host "Found $($jars.Count) JAR files"
 Write-Host "Classpath length: $($classpath.Length)"
 
-# Compile ReportServiceImpl.java
-& "E:\谷歌下载\jsp\bin\javac.exe" -d target/classes -proc:none -cp $classpath src/main/java/com/example/hospital/service/impl/ReportServiceImpl.java
+# Get all Java source files
+$javaFiles = Get-ChildItem -Path "src/main/java" -Recurse -Filter "*.java" | Select-Object -ExpandProperty FullName
+
+Write-Host "Found $($javaFiles.Count) Java source files"
+
+# Create target/classes directory if it doesn't exist
+if (-not (Test-Path "target/classes")) {
+    New-Item -ItemType Directory -Path "target/classes" -Force | Out-Null
+}
+
+# Compile all Java files
+& "E:\谷歌下载\jsp\bin\javac.exe" -d target/classes -cp $classpath $javaFiles
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Compilation successful!"

@@ -18,7 +18,7 @@
             <el-table-column prop="warehouseName" label="仓库" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button type="text" @click="viewDetail(scope.row)">详情</el-button>
+                <el-button type="link" @click="viewDetail(scope.row)">详情</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -49,7 +49,7 @@
             <el-table-column prop="createTime" label="领用时间" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button v-if="scope.row.recycleStatus !== '已回收'" type="text" @click="recycle(scope.row)">空安瓿回收</el-button>
+                <el-button v-if="scope.row.recycleStatus !== '已回收'" type="link" @click="recycle(scope.row)">空安瓿回收</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -75,7 +75,7 @@
             <el-table-column prop="createTime" label="申请时间" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button v-if="scope.row.status === 1" type="text" @click="approveApply(scope.row)">审批</el-button>
+                <el-button v-if="scope.row.status === 1" type="link" @click="approveApply(scope.row)">审批</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -133,7 +133,7 @@
     <el-dialog title="领用申请" v-model="showApplyModal" width="600px">
       <el-form :model="applyForm" ref="applyFormRef" label-width="100px">
         <el-form-item label="药品" prop="drugId">
-          <el-select v-model="applyForm.drugId">
+          <el-select v-model="applyForm.drugId" @change="onDrugChange">
             <el-option v-for="drug in specialDrugs" :key="drug.id" :label="drug.drugName + ' - ' + drug.spec" :value="drug.id"></el-option>
           </el-select>
         </el-form-item>
@@ -191,6 +191,7 @@ const recycleForm = reactive({
 
 const applyForm = reactive({
   drugId: null,
+  drugName: '',
   quantity: null,
   prescriptionNo: '',
   purpose: ''
@@ -207,6 +208,17 @@ const statusTagTypes = { 1: 'warning', 2: 'success', 3: 'info', 4: 'danger' }
 
 const getStatusName = (status) => statusNames[status] || '未知'
 const getStatusTagType = (status) => statusTagTypes[status] || 'default'
+
+const onDrugChange = () => {
+  if (applyForm.drugId) {
+    const drug = specialDrugs.value.find(d => d.id === applyForm.drugId)
+    if (drug) {
+      applyForm.drugName = drug.drugName
+    }
+  } else {
+    applyForm.drugName = ''
+  }
+}
 
 const loadInventory = async () => {
   try {

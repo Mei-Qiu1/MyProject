@@ -65,7 +65,7 @@
             <el-table-column prop="createTime" label="申请时间" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button size="small" type="primary">创建订单</el-button>
+                <el-button size="small" type="primary" @click="createOrder(scope.$index)">创建订单</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -90,7 +90,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../../utils/axios'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const pendingRequests = ref(0)
@@ -104,40 +105,66 @@ const goTo = (path) => {
   router.push(path)
 }
 
+const createOrder = (index) => {
+  if (index === null || index === undefined || index < 0) {
+    ElMessage.error('无效的请求索引')
+    return
+  }
+  
+  const request = requests.value[index]
+  if (!request) {
+    ElMessage.error('请求数据不存在')
+    return
+  }
+  
+  let requestId = null
+  
+  if (request.id) {
+    if (typeof request.id === 'string') {
+      const match = request.id.match(/(\d+)/)
+      requestId = match ? parseInt(match[1]) : null
+    } else {
+      requestId = parseInt(request.id)
+    }
+  }
+  
+  if (!requestId || requestId <= 0) {
+    ElMessage.error('无效的申请单ID')
+    return
+  }
+  
+  console.log('Creating order for request ID:', requestId)
+  
+  axios.post('/purchase/orders/from-request/' + requestId)
+    .then(response => {
+      ElMessage.success('订单创建成功')
+      loadDashboardData()
+    })
+    .catch(error => {
+      console.error('Order creation error:', error)
+      ElMessage.error('创建订单失败: ' + (error.response?.data?.message || error.message))
+    })
+}
+
 const loadDashboardData = () => {
   axios.get('/dashboard/purchaser')
     .then(response => {
-      const data = response.data.data
-      pendingRequests.value = data.pendingRequests || 5
-      pendingOrders.value = data.pendingOrders || 3
-      supplierCount.value = data.supplierCount || 12
-      monthlyAmount.value = data.monthlyAmount || '¥128,500'
-      requests.value = data.requests || [
-        { id: 1, drugName: '阿莫西林胶囊', quantity: 200, applicant: '张药师', createTime: '09:00' },
-        { id: 2, drugName: '硝苯地平缓释片', quantity: 150, applicant: '李药师', createTime: '09:30' },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', quantity: 100, applicant: '王药师', createTime: '10:00' }
-      ]
-      suppliers.value = data.suppliers || [
-        { supplierName: '华北制药集团', contactName: '王经理', phone: '0311-85962222', cooperationStatus: '合作中' },
-        { supplierName: '拜耳医药', contactName: '李经理', phone: '010-59218888', cooperationStatus: '合作中' },
-        { supplierName: '国药集团', contactName: '张经理', phone: '010-63365555', cooperationStatus: '合作中' }
-      ]
+      const data = response.data
+      pendingRequests.value = data.pendingRequests
+      pendingOrders.value = data.pendingOrders
+      supplierCount.value = data.supplierCount
+      monthlyAmount.value = data.monthlyAmount || '¥0'
+      requests.value = data.requests || []
+      suppliers.value = data.suppliers || []
     })
-    .catch(() => {
-      pendingRequests.value = 5
-      pendingOrders.value = 3
-      supplierCount.value = 12
-      monthlyAmount.value = '¥128,500'
-      requests.value = [
-        { id: 1, drugName: '阿莫西林胶囊', quantity: 200, applicant: '张药师', createTime: '09:00' },
-        { id: 2, drugName: '硝苯地平缓释片', quantity: 150, applicant: '李药师', createTime: '09:30' },
-        { id: 3, drugName: '奥美拉唑肠溶胶囊', quantity: 100, applicant: '王药师', createTime: '10:00' }
-      ]
-      suppliers.value = [
-        { supplierName: '华北制药集团', contactName: '王经理', phone: '0311-85962222', cooperationStatus: '合作中' },
-        { supplierName: '拜耳医药', contactName: '李经理', phone: '010-59218888', cooperationStatus: '合作中' },
-        { supplierName: '国药集团', contactName: '张经理', phone: '010-63365555', cooperationStatus: '合作中' }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      pendingRequests.value = 0
+      pendingOrders.value = 0
+      supplierCount.value = 0
+      monthlyAmount.value = '¥0'
+      requests.value = []
+      suppliers.value = []
     })
 }
 

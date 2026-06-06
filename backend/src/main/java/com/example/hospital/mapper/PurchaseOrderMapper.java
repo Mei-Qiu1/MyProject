@@ -1,9 +1,7 @@
 package com.example.hospital.mapper;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.example.hospital.entity.PurchaseOrder;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -12,18 +10,48 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface PurchaseOrderMapper extends BaseMapper<PurchaseOrder> {
 
-    // 分页查询（带供应商名称）
-    @Select("SELECT po.*, s.supplier_name AS supplier_name " +
+    @Select("<script>" +
+            "SELECT po.*, s.supplier_name AS supplier_name " +
             "FROM purchase_order po " +
             "LEFT JOIN supplier s ON po.supplier_id = s.id " +
-            "${ew.customSqlSegment}")
+            "WHERE 1=1 " +
+            "<if test=\"keyword != null and keyword != ''\">" +
+            "AND po.order_no LIKE CONCAT('%', #{keyword}, '%') " +
+            "</if>" +
+            "<if test=\"status != null and status > 0\">" +
+            "AND po.status = #{status} " +
+            "</if>" +
+            "ORDER BY po.create_time DESC" +
+            "</script>")
     IPage<PurchaseOrder> selectPageWithNames(IPage<PurchaseOrder> page,
-                                             @Param(Constants.WRAPPER) Wrapper<PurchaseOrder> wrapper);
+                                             @Param("keyword") String keyword,
+                                             @Param("status") Integer status);
 
-    // 根据ID查询单个订单（带供应商名称）
     @Select("SELECT po.*, s.supplier_name AS supplier_name " +
             "FROM purchase_order po " +
             "LEFT JOIN supplier s ON po.supplier_id = s.id " +
             "WHERE po.id = #{id}")
     PurchaseOrder selectByIdWithNames(@Param("id") Long id);
+
+    @Select("SELECT COUNT(*) FROM purchase_order WHERE status = #{status}")
+    long countByStatus(@Param("status") Integer status);
+
+    @Select("SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')")
+    java.math.BigDecimal sumAmountByMonth();
+
+    @Select("<script>" +
+            "SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE 1=1 " +
+            "<if test=\"supplierId != null and supplierId > 0\">AND supplier_id = #{supplierId}</if> " +
+            "<if test=\"startDate != null and endDate != null\">AND create_time BETWEEN #{startDate} AND #{endDate}</if>" +
+            "</script>")
+    java.math.BigDecimal sumAmountByCondition(
+            @Param("supplierId") Long supplierId,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate);
+
+    @Select("SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE supplier_id = #{supplierId}")
+    java.math.BigDecimal sumAmountBySupplier(@Param("supplierId") Long supplierId);
+
+    @Select("SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE create_time BETWEEN #{startDate} AND #{endDate}")
+    java.math.BigDecimal sumAmountByMonthRange(@Param("startDate") String startDate, @Param("endDate") String endDate);
 }

@@ -52,7 +52,6 @@
         <el-card title="快捷操作">
           <el-space wrap style="width: 100%;">
             <el-button type="primary" @click="goTo('/special/drugs')">特殊药品管理</el-button>
-            <el-button type="success" @click="goTo('/inventory/list')">库存查询</el-button>
           </el-space>
         </el-card>
       </el-col>
@@ -87,7 +86,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../../utils/axios'
 
 const router = useRouter()
 const specialDrugCount = ref(0)
@@ -104,39 +103,22 @@ const goTo = (path) => {
 const loadDashboardData = () => {
   axios.get('/dashboard/special-pharmacist')
     .then(response => {
-      const data = response.data.data
-      specialDrugCount.value = data.specialDrugCount || 12
-      todayRecords.value = data.todayRecords || 8
-      specialInventory.value = data.specialInventory || 350
-      lowStockCount.value = data.lowStockCount || 2
-      records.value = data.records || [
-        { drugName: '吗啡注射液', patientName: '张三', doctorName: '李医生', quantity: '1支', createTime: '09:00' },
-        { drugName: '地西泮片', patientName: '李四', doctorName: '王医生', quantity: '20片', createTime: '09:30' },
-        { drugName: '吗啡注射液', patientName: '王五', doctorName: '张医生', quantity: '2支', createTime: '10:00' }
-      ]
-      specialDrugs.value = data.specialDrugs || [
-        { drugName: '吗啡注射液', spec: '10mg/1ml*5支', category: '麻醉药品', quantity: 30, warehouse: '特殊药品库' },
-        { drugName: '地西泮片', spec: '2.5mg*20片', category: '精神药品', quantity: 50, warehouse: '特殊药品库' },
-        { drugName: '哌替啶注射液', spec: '50mg/2ml*5支', category: '麻醉药品', quantity: 25, warehouse: '特殊药品库' },
-        { drugName: '阿普唑仑片', spec: '0.4mg*20片', category: '精神药品', quantity: 40, warehouse: '特殊药品库' }
-      ]
+      const data = response.data
+      specialDrugCount.value = data.specialDrugCount
+      todayRecords.value = data.todayRecords
+      specialInventory.value = data.specialInventory
+      lowStockCount.value = data.lowStockCount
+      records.value = data.records || []
+      specialDrugs.value = data.specialDrugs || []
     })
-    .catch(() => {
-      specialDrugCount.value = 12
-      todayRecords.value = 8
-      specialInventory.value = 350
-      lowStockCount.value = 2
-      records.value = [
-        { drugName: '吗啡注射液', patientName: '张三', doctorName: '李医生', quantity: '1支', createTime: '09:00' },
-        { drugName: '地西泮片', patientName: '李四', doctorName: '王医生', quantity: '20片', createTime: '09:30' },
-        { drugName: '吗啡注射液', patientName: '王五', doctorName: '张医生', quantity: '2支', createTime: '10:00' }
-      ]
-      specialDrugs.value = [
-        { drugName: '吗啡注射液', spec: '10mg/1ml*5支', category: '麻醉药品', quantity: 30, warehouse: '特殊药品库' },
-        { drugName: '地西泮片', spec: '2.5mg*20片', category: '精神药品', quantity: 50, warehouse: '特殊药品库' },
-        { drugName: '哌替啶注射液', spec: '50mg/2ml*5支', category: '麻醉药品', quantity: 25, warehouse: '特殊药品库' },
-        { drugName: '阿普唑仑片', spec: '0.4mg*20片', category: '精神药品', quantity: 40, warehouse: '特殊药品库' }
-      ]
+    .catch(error => {
+      console.error('Failed to load dashboard data:', error)
+      specialDrugCount.value = 0
+      todayRecords.value = 0
+      specialInventory.value = 0
+      lowStockCount.value = 0
+      records.value = []
+      specialDrugs.value = []
     })
 }
 

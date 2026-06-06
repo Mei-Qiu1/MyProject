@@ -34,7 +34,7 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
     // ========== 低库存预警（聚合查询，不区分批次） ==========
     @Select("<script>" +
             "SELECT " +
-            "   w.warehouse_name AS warehouseName, " +
+            "   COALESCE(w.warehouse_name, '无库存') AS warehouseName, " +
             "   d.drug_code AS drugCode, " +
             "   d.drug_name AS drugName, " +
             "   d.spec, " +
@@ -92,12 +92,6 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
     @Select("SELECT COALESCE(SUM(quantity), 0) FROM inventory WHERE drug_id = #{drugId} AND quantity > 0")
     Integer getTotalQuantityByDrugId(Long drugId);
 
-    @Select("SELECT COUNT(*) FROM inventory WHERE quantity <= 10 AND quantity > 0")
-    Integer countLowStock();
-
-    @Select("SELECT COUNT(*) FROM inventory WHERE expire_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND quantity > 0")
-    Integer countExpiring();
-
     @Select("SELECT i.*, d.drug_name, d.spec FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE i.quantity <= 10 AND i.quantity > 0 ORDER BY i.quantity ASC LIMIT #{limit}")
     List<Inventory> selectLowStock(@Param("limit") Integer limit);
 
@@ -106,9 +100,6 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
 
     @Select("SELECT i.*, d.drug_name, d.spec FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity > 0")
     List<Inventory> selectSpecialDrugInventory();
-
-    @Select("SELECT COUNT(*) FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity <= 10 AND i.quantity > 0")
-    Integer countSpecialLowStock();
 
     @Select("SELECT i.id, i.drug_id, i.batch_no, i.quantity, i.expire_date, " +
             "d.drug_code, d.drug_name, d.spec, d.unit " +
@@ -133,4 +124,34 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
             "HAVING totalStock <= d.min_stock " +
             "ORDER BY totalStock ASC")
     List<Map<String, Object>> findLowStockSummary();
+
+    @Select("SELECT COALESCE(SUM(quantity), 0) FROM inventory WHERE quantity > 0")
+    Long sumAllQuantity();
+
+    @Select("SELECT COUNT(DISTINCT d.id) FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE i.quantity <= d.min_stock AND i.quantity > 0")
+    Long countLowStock();
+
+    @Select("SELECT COUNT(*) FROM inventory WHERE expire_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND quantity > 0")
+    Long countExpiringStock();
+
+    @Select("SELECT i.id, d.drug_name AS drugName, w.warehouse_name AS warehouse, i.quantity FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id LEFT JOIN warehouse w ON i.warehouse_id = w.id WHERE i.quantity <= d.min_stock AND i.quantity > 0 LIMIT #{limit}")
+    List<Map<String, Object>> selectLowStockDrugs(@Param("limit") Integer limit);
+
+    @Select("SELECT i.id, d.drug_name AS drugName, d.spec, i.expire_date AS expireDate, w.warehouse_name AS warehouse, i.quantity FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id LEFT JOIN warehouse w ON i.warehouse_id = w.id WHERE i.expire_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) AND i.quantity > 0 ORDER BY i.expire_date ASC LIMIT #{limit}")
+    List<Map<String, Object>> selectExpiringDrugs(@Param("limit") Integer limit);
+
+    @Select("SELECT SUM(i.quantity) FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity > 0")
+    Long sumSpecialDrugQuantity();
+
+    @Select("SELECT COUNT(DISTINCT d.id) FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id WHERE d.is_special = 1 AND i.quantity <= d.min_stock AND i.quantity > 0")
+    Long countSpecialDrugLowStock();
+
+    @Select("SELECT i.id, d.drug_name AS drugName, d.spec, dc.category_name AS category, i.quantity, w.warehouse_name AS warehouse FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id LEFT JOIN drug_category dc ON d.category_id = dc.id LEFT JOIN warehouse w ON i.warehouse_id = w.id WHERE d.is_special = 1 AND i.quantity > 0 ORDER BY dc.category_name, d.drug_name")
+    List<Map<String, Object>> selectSpecialDrugStock();
+
+    @Select("SELECT dc.category_name AS category, COALESCE(SUM(i.quantity), 0) AS quantity FROM inventory i LEFT JOIN drug d ON i.drug_id = d.id LEFT JOIN drug_category dc ON d.category_id = dc.id WHERE i.quantity > 0 GROUP BY dc.category_name ORDER BY dc.category_name")
+    List<Map<String, Object>> getInventoryByCategory();
+
+    @Select("SELECT w.warehouse_name AS warehouse, COALESCE(SUM(i.quantity), 0) AS quantity FROM inventory i LEFT JOIN warehouse w ON i.warehouse_id = w.id WHERE i.quantity > 0 GROUP BY w.warehouse_name ORDER BY w.warehouse_name")
+    List<Map<String, Object>> getInventoryByWarehouse();
 }

@@ -46,15 +46,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     public IPage<PurchaseOrder> page(int page, int size, String keyword, Integer status) {
         Page<PurchaseOrder> pageParam = new Page<>(page, size);
-        LambdaQueryWrapper<PurchaseOrder> wrapper = new LambdaQueryWrapper<>();
-        if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(PurchaseOrder::getOrderNo, keyword);
-        }
-        if (status != null) {
-            wrapper.eq(PurchaseOrder::getStatus, status);
-        }
-        wrapper.orderByDesc(PurchaseOrder::getCreateTime);
-        return purchaseOrderMapper.selectPageWithNames(pageParam, wrapper);
+        return purchaseOrderMapper.selectPageWithNames(pageParam, 
+                (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null, 
+                (status != null && status > 0) ? status : null);
     }
 
     @Override

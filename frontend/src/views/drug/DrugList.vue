@@ -62,16 +62,18 @@
       <el-table-column prop="status" label="状态" width="70">
         <template #default="scope">
           <el-switch
-              :value="scope.row.status === 1"
-              @change="toggleStatus(scope.row)"
+              v-model="scope.row.status"
+              :active-value="1"
+              :inactive-value="0"
+              @change="toggleStatus(scope.row, $event)"
           />
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="scope">
-          <el-button type="text" size="small" @click="editDrug(scope.row)">编辑</el-button>
-          <el-button type="text" size="small" @click="deleteDrug(scope.row)">删除</el-button>
-          <el-button type="text" size="small" @click="viewDetail(scope.row)">详情</el-button>
+          <el-button type="link" size="small" @click="editDrug(scope.row)">编辑</el-button>
+          <el-button type="link" size="small" @click="deleteDrug(scope.row)">删除</el-button>
+          <el-button type="link" size="small" @click="viewDetail(scope.row)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -141,6 +143,9 @@
         </el-form-item>
         <el-form-item label="批发价" prop="wholesalePrice">
           <el-input v-model="formData.wholesalePrice" type="number" step="0.01"></el-input>
+        </el-form-item>
+        <el-form-item label="预警阈值" prop="minStock">
+          <el-input v-model="formData.minStock" type="number" placeholder="当库存低于此值时触发预警，建议采购量为阈值的3倍"></el-input>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input type="textarea" v-model="formData.remark"></el-input>
@@ -239,6 +244,7 @@ const formData = reactive({
   purchasePrice: null,
   retailPrice: null,
   wholesalePrice: null,
+  minStock: null,
   remark: ''
 })
 
@@ -298,14 +304,15 @@ const handlePageChange = (page) => {
 }
 
 // 切换状态
-const toggleStatus = async (row) => {
+const toggleStatus = async (row, newStatus) => {
+  const oldStatus = row.status
   try {
-    await axios.put(`/drugs/${row.id}/status`, null, { params: { status: row.status === 1 ? 0 : 1 } })
-    row.status = row.status === 1 ? 0 : 1
+    await axios.put(`/drugs/${row.id}/status`, null, { params: { status: newStatus } })
+    row.status = newStatus
     ElMessage.success('状态更新成功')
   } catch (error) {
     ElMessage.error('状态更新失败')
-    row.status = row.status === 1 ? 0 : 1
+    row.status = oldStatus
   }
 }
 
@@ -463,6 +470,7 @@ const resetForm = () => {
   formData.purchasePrice = null
   formData.retailPrice = null
   formData.wholesalePrice = null
+  formData.minStock = null
   formData.remark = ''
   if (formRef.value) formRef.value.resetFields()
 }

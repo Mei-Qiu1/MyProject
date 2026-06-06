@@ -66,10 +66,10 @@
         </el-form-item>
         <!-- 批号由系统自动生成，前端不显示 -->
         <el-form-item label="生产日期" prop="productionDate">
-          <el-date-picker v-model="stockInForm.productionDate" type="date" placeholder="请选择生产日期" />
+          <el-date-picker v-model="stockInForm.productionDate" type="date" placeholder="请选择生产日期" @change="onProductionDateChange" />
         </el-form-item>
         <el-form-item label="有效期" prop="expireDate" required>
-          <el-date-picker v-model="stockInForm.expireDate" type="date" placeholder="请选择有效期" />
+          <el-date-picker v-model="stockInForm.expireDate" type="date" placeholder="请选择有效期" :disabled="!stockInForm.productionDate" :picker-options="expireDatePickerOptions" />
         </el-form-item>
         <el-form-item label="数量" prop="quantity" required>
           <el-input v-model.number="stockInForm.quantity" type="number" :min="1" placeholder="请输入数量" />
@@ -175,6 +175,22 @@ const stockInForm = reactive({
   remark: ''
 })
 
+// 有效期日期选择器配置（限制只能选择生产日期之后的日期）
+const expireDatePickerOptions = computed(() => {
+  if (!stockInForm.productionDate) {
+    return {}
+  }
+  return {
+    disabledDate: (time) => {
+      // 确保两个日期都是 Date 对象进行比较
+      const productionDate = new Date(stockInForm.productionDate)
+      const selectedDate = new Date(time.getTime())
+      // 禁用生产日期及之前的日期
+      return selectedDate <= productionDate
+    }
+  }
+})
+
 // ---------- 出库表单 ----------
 const showStockOutModal = ref(false)
 const stockOutFormRef = ref(null)
@@ -267,6 +283,18 @@ const onDrugSelect = (drugId) => {
   }
 }
 
+// 生产日期改变时，检查并清除无效的有效期
+const onProductionDateChange = () => {
+  if (stockInForm.expireDate && stockInForm.productionDate) {
+    const productionDate = new Date(stockInForm.productionDate)
+    const expireDate = new Date(stockInForm.expireDate)
+    if (expireDate <= productionDate) {
+      stockInForm.expireDate = null
+      ElMessage.warning('有效期必须晚于生产日期，请重新选择')
+    }
+  }
+}
+
 const resetStockInForm = () => {
   stockInForm.drugId = null
   stockInForm.productionDate = null
@@ -283,8 +311,19 @@ const submitStockIn = async () => {
     ElMessage.warning('请选择药品')
     return
   }
+  if (!stockInForm.productionDate) {
+    ElMessage.warning('请选择生产日期')
+    return
+  }
   if (!stockInForm.expireDate) {
     ElMessage.warning('请选择有效期')
+    return
+  }
+  // 验证有效期必须大于生产日期
+  const productionDate = new Date(stockInForm.productionDate)
+  const expireDate = new Date(stockInForm.expireDate)
+  if (expireDate <= productionDate) {
+    ElMessage.warning('有效期必须晚于生产日期，请重新选择')
     return
   }
   if (!stockInForm.quantity || stockInForm.quantity <= 0) {

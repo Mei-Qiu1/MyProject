@@ -19,4 +19,7 @@ public interface PrescriptionMapper extends BaseMapper<Prescription> {
     
     @Select("SELECT COUNT(*) FROM prescription WHERE status = 3 AND DATE(create_time) = CURDATE()")
     Integer countTodayDispensed();
+
+    @Select("SELECT * FROM prescription WHERE status = 0 ORDER BY create_time DESC LIMIT #{limit}")
+    List<Prescription> selectPendingPrescriptions(@Param("limit") Integer limit);
 }

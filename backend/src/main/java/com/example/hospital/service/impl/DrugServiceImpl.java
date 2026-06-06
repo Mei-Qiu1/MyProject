@@ -66,6 +66,7 @@ public class DrugServiceImpl implements DrugService {
         if (manageCategoryId != null) {
             wrapper.eq(Drug::getManageCategoryId, manageCategoryId);
         }
+        wrapper.orderByDesc(Drug::getCreateTime);
         return drugMapper.selectPage(pageParam, wrapper);
     }
 

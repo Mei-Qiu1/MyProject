@@ -27,8 +27,8 @@
       <el-table-column prop="createTime" label="创建时间" />
       <el-table-column label="操作" width="100">
         <template #default="scope">
-          <el-button type="text" @click="viewDetail(scope.row)">详情</el-button>
-          <el-button v-if="scope.row.status === 2" type="text" @click="receiveOrder(scope.row)">到货验收</el-button>
+          <el-button type="link" @click="viewDetail(scope.row)">详情</el-button>
+          <el-button v-if="scope.row.status === 2" type="link" @click="receiveOrder(scope.row)">到货验收</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -154,20 +154,23 @@ const getStatusTagType = (status) => statusTagTypes[status] || 'default'
 
 const loadOrders = async () => {
   try {
-    const response = await axios.get('/purchase/orders', {
-      params: {
-        page: pagination.current,
-        size: pagination.size,
-        keyword: keyword.value,
-        status: status.value === -1 ? undefined : status.value
-      }
-    })
+    const params = {
+      page: pagination.current,
+      size: pagination.size
+    }
+    if (keyword.value && keyword.value.trim()) {
+      params.keyword = keyword.value.trim()
+    }
+    if (status.value !== -1 && status.value !== null && status.value !== undefined) {
+      params.status = parseInt(status.value)
+    }
+    const response = await axios.get('/purchase/orders', { params })
     if (response.code === 200) {
       orderList.value = response.data.records
       pagination.total = response.data.total
     }
   } catch (error) {
-    ElMessage.error('加载订单列表失败')
+    ElMessage.error('加载订单列表失败: ' + (error.response?.data?.message || error.message))
   }
 }
 

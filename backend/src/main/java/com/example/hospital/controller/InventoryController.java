@@ -66,6 +66,30 @@ public class InventoryController {
         return Result.success(warehouseService.list());
     }
 
+    // 根据药品ID获取批次列表（用于出库选择）
+    @GetMapping("/batches/{drugId}")
+    public Result<?> getBatchesByDrugId(@PathVariable Long drugId) {
+        try {
+            List<Inventory> batches = inventoryService.getBatchesByDrugId(drugId);
+            return Result.success(batches);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("加载批次失败：" + e.getMessage());
+        }
+    }
+
+    // 入库（新增库存记录）
+    @PostMapping
+    public Result<?> addInventory(@RequestBody Inventory inventory) {
+        try {
+            inventoryService.save(inventory);
+            return Result.success("入库成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.fail("入库失败：" + e.getMessage());
+        }
+    }
+
     // 报损（减少库存）
     @PostMapping("/{id}/decrease")
     public Result<?> decreaseStock(@PathVariable Long id, @RequestParam Integer quantity) {

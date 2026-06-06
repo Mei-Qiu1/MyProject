@@ -37,12 +37,23 @@ public class SupplierServiceImpl implements SupplierService {
     public void save(Supplier supplier) {
         supplier.setCreateTime(LocalDateTime.now());
         supplier.setUpdateTime(LocalDateTime.now());
+        // 确保状态和合作状态保持一致
+        if (supplier.getStatus() == null) {
+            supplier.setStatus(1);
+        }
+        if (supplier.getCooperationStatus() == null || supplier.getCooperationStatus() != supplier.getStatus()) {
+            supplier.setCooperationStatus(supplier.getStatus());
+        }
         supplierMapper.insert(supplier);
     }
 
     @Override
     public void update(Supplier supplier) {
         supplier.setUpdateTime(LocalDateTime.now());
+        // 确保状态和合作状态保持一致
+        if (supplier.getStatus() != null && supplier.getCooperationStatus() != supplier.getStatus()) {
+            supplier.setCooperationStatus(supplier.getStatus());
+        }
         supplierMapper.updateById(supplier);
     }
 
@@ -56,6 +67,8 @@ public class SupplierServiceImpl implements SupplierService {
         Supplier supplier = supplierMapper.selectById(id);
         if (supplier != null) {
             supplier.setStatus(status);
+            // 状态和合作状态保持一致：开启→合作中，关闭→暂停
+            supplier.setCooperationStatus(status);
             supplier.setUpdateTime(LocalDateTime.now());
             supplierMapper.updateById(supplier);
         }
