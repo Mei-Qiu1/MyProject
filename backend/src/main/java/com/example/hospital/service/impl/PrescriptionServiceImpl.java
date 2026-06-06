@@ -29,7 +29,13 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public Prescription findById(Long id) {
-        return prescriptionMapper.selectById(id);
+        Prescription prescription = prescriptionMapper.selectById(id);
+        if (prescription != null) {
+            // 查询处方明细
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(id);
+            prescription.setDetails(details);
+        }
+        return prescription;
     }
 
     @Override
@@ -43,7 +49,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             wrapper.eq(Prescription::getStatus, status);
         }
         wrapper.orderByDesc(Prescription::getCreateTime);
-        return prescriptionMapper.selectPage(pageParam, wrapper);
+        IPage<Prescription> result = prescriptionMapper.selectPage(pageParam, wrapper);
+        
+        // 为每个处方加载明细
+        for (Prescription prescription : result.getRecords()) {
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(prescription.getId());
+            prescription.setDetails(details);
+        }
+        
+        return result;
     }
 
     @Override
@@ -98,8 +112,22 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     public void dispense(Long id) {
         Prescription prescription = prescriptionMapper.selectById(id);
-        if (prescription != null && prescription.getStatus() == 2) {
-            prescription.setStatus(3);
+        if (prescription != null) {
+            if (prescription.getStatus() == 2) {
+                prescription.setStatus(3);
+            } else if (prescription.getStatus() == 3) {
+                prescription.setStatus(4);
+            }
+            prescription.setUpdateTime(LocalDateTime.now());
+            prescriptionMapper.updateById(prescription);
+        }
+    }
+
+    @Override
+    public void returnDrug(Long id) {
+        Prescription prescription = prescriptionMapper.selectById(id);
+        if (prescription != null && prescription.getStatus() == 4) {
+            prescription.setStatus(5);
             prescription.setUpdateTime(LocalDateTime.now());
             prescriptionMapper.updateById(prescription);
         }

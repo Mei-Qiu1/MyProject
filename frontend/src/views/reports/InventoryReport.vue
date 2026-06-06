@@ -4,9 +4,8 @@
     <div class="report-header">
       <h2>库存报表</h2>
       <div class="report-actions">
-        <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
-        <el-button type="primary" @click="refreshReport">刷新报表</el-button>
-        <el-button type="warning" @click="exportReport">导出Excel</el-button>
+        <el-input v-model="searchDrugName" placeholder="请输入药品名称" class="search-input"></el-input>
+        <el-button type="primary" @click="refreshReport">搜索</el-button>
       </div>
     </div>
     
@@ -89,7 +88,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from '../../utils/axios'
 
-const dateRange = ref([])
+const searchDrugName = ref('')
 const summary = reactive({
   totalDrugCount: 0,
   totalQuantity: 0,
@@ -121,7 +120,11 @@ const refreshReport = async () => {
 
 const loadSummary = async () => {
   try {
-    const response = await axios.get('/reports/inventory/summary')
+    const response = await axios.get('/reports/inventory/summary', {
+      params: {
+        drugName: searchDrugName.value
+      }
+    })
     if (response.code === 200) {
       Object.assign(summary, response.data)
     }
@@ -135,7 +138,8 @@ const loadDetail = async () => {
     const response = await axios.get('/reports/inventory/detail', {
       params: {
         page: pagination.current,
-        size: pagination.size
+        size: pagination.size,
+        drugName: searchDrugName.value
       }
     })
     if (response.code === 200) {
@@ -172,24 +176,6 @@ const loadABC = async () => {
 const handlePageChange = (page) => {
   pagination.current = page
   loadDetail()
-}
-
-const exportReport = async () => {
-  try {
-    const response = await axios.get('/reports/inventory/export', { responseType: 'blob' })
-    const blob = new Blob([response], { type: 'application/vnd.ms-excel' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '库存报表.xlsx'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
-  } catch (error) {
-    ElMessage.error('导出失败')
-  }
 }
 
 onMounted(() => {

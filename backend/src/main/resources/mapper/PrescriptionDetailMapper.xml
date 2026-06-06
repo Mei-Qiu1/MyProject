@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.hospital.mapper.PrescriptionDetailMapper">
+    
+    <resultMap id="BaseResultMap" type="com.example.hospital.entity.PrescriptionDetail">
+        <id column="id" property="id" />
+        <result column="prescription_id" property="prescriptionId" />
+        <result column="drug_id" property="drugId" />
+        <result column="drug_name" property="drugName" />
+        <result column="spec" property="spec" />
+        <result column="unit" property="unit" />
+        <result column="quantity" property="quantity" />
+        <result column="usage_info" property="usage" />
+        <result column="price" property="price" />
+        <result column="amount" property="amount" />
+    </resultMap>
+    
+    <select id="selectByPrescriptionId" resultMap="BaseResultMap">
+        SELECT id, prescription_id, drug_id, drug_name, spec, unit, quantity, 
+               usage_info, price, amount
+        FROM prescription_detail
+        WHERE prescription_id = #{prescriptionId}
+    </select>
+    
+</mapper>

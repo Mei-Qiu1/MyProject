@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,13 +49,16 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
+
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/login", "/auth/register").permitAll()
                 .requestMatchers("/drugs/**").hasAnyAuthority("ADMIN", "PHARMACIST", "PURCHASER", "STOCK_MANAGER", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR", "DOCTOR")
                 .requestMatchers("/purchase/**").hasAnyAuthority("ADMIN", "PURCHASER", "PHARMACY_DIRECTOR", "STOCK_MANAGER")
-                .requestMatchers("/inventory/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER", "PURCHASER", "PHARMACY_DIRECTOR")
-                .requestMatchers("/pharmacy/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR")
+                .requestMatchers("/inventory/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER", "PURCHASER", "PHARMACY_DIRECTOR", "SPECIAL_PHARMACIST", "DOCTOR")
+                .requestMatchers("/pharmacy/**").hasAnyAuthority("ADMIN", "PHARMACIST", "STOCK_MANAGER", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR", "DOCTOR")
                 .requestMatchers("/clinical/**").hasAnyAuthority("ADMIN", "DOCTOR", "PHARMACIST", "PHARMACY_DIRECTOR")
                 .requestMatchers("/special/**").hasAnyAuthority("ADMIN", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR")
+                .requestMatchers("/system/users/change-password").authenticated()
                 .requestMatchers("/system/**").hasAuthority("ADMIN")
                 .requestMatchers("/reports/**").hasAnyAuthority("ADMIN", "PHARMACIST", "PURCHASER", "STOCK_MANAGER", "SPECIAL_PHARMACIST", "PHARMACY_DIRECTOR", "DOCTOR")
                 .requestMatchers("/doctor/**").hasAuthority("DOCTOR")

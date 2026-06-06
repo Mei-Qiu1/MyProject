@@ -91,26 +91,54 @@
     <!-- 新增/编辑药品对话框 -->
     <el-dialog :title="dialogTitle" v-model="showAddModal" width="600px" @close="resetForm">
       <el-form :model="formData" ref="formRef" label-width="100px">
-        <el-form-item label="药品编码" prop="drugCode" required>
+        <el-form-item prop="drugCode">
+          <template #label>
+            <span>药品编码</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.drugCode" :disabled="isEdit"></el-input>
         </el-form-item>
-        <el-form-item label="药品名称" prop="drugName" required>
+        <el-form-item prop="drugName">
+          <template #label>
+            <span>药品名称</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.drugName"></el-input>
         </el-form-item>
-        <el-form-item label="规格" prop="spec">
+        <el-form-item prop="spec">
+          <template #label>
+            <span>规格</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.spec"></el-input>
         </el-form-item>
-        <el-form-item label="剂型" prop="dosageForm">
+        <el-form-item prop="dosageForm">
+          <template #label>
+            <span>剂型</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.dosageForm"></el-input>
         </el-form-item>
-        <el-form-item label="生产厂家" prop="manufacturer">
+        <el-form-item prop="manufacturer">
+          <template #label>
+            <span>生产厂家</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.manufacturer"></el-input>
         </el-form-item>
-        <el-form-item label="批准文号" prop="approvalNumber">
+        <el-form-item prop="approvalNumber">
+          <template #label>
+            <span>批准文号</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.approvalNumber"></el-input>
         </el-form-item>
-        <el-form-item label="药理分类" prop="categoryId">
-          <el-select v-model="formData.categoryId" placeholder="请选择" clearable>
+        <el-form-item prop="categoryId">
+          <template #label>
+            <span>药理分类</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
+          <el-select v-model="formData.categoryId" placeholder="请选择">
             <el-option
                 v-for="cat in pharmacologicalCategories"
                 :key="cat.id"
@@ -119,8 +147,12 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="管理分类" prop="manageCategoryId">
-          <el-select v-model="formData.manageCategoryId" placeholder="请选择" clearable>
+        <el-form-item prop="manageCategoryId">
+          <template #label>
+            <span>管理分类</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
+          <el-select v-model="formData.manageCategoryId" placeholder="请选择">
             <el-option
                 v-for="cat in managementCategories"
                 :key="cat.id"
@@ -129,25 +161,53 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="单位" prop="unit">
+        <el-form-item prop="unit">
+          <template #label>
+            <span>单位</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.unit"></el-input>
         </el-form-item>
-        <el-form-item label="特殊药品">
+        <el-form-item>
+          <template #label>
+            <span>特殊药品</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-switch v-model="formData.isSpecial" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="采购价" prop="purchasePrice">
+        <el-form-item prop="purchasePrice">
+          <template #label>
+            <span>采购价</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.purchasePrice" type="number" step="0.01"></el-input>
         </el-form-item>
-        <el-form-item label="零售价" prop="retailPrice">
+        <el-form-item prop="retailPrice">
+          <template #label>
+            <span>零售价</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.retailPrice" type="number" step="0.01"></el-input>
         </el-form-item>
-        <el-form-item label="批发价" prop="wholesalePrice">
+        <el-form-item prop="wholesalePrice">
+          <template #label>
+            <span>批发价</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.wholesalePrice" type="number" step="0.01"></el-input>
         </el-form-item>
-        <el-form-item label="预警阈值" prop="minStock">
+        <el-form-item prop="minStock">
+          <template #label>
+            <span>预警阈值</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.minStock" type="number" placeholder="当库存低于此值时触发预警，建议采购量为阈值的3倍"></el-input>
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item prop="remark">
+          <template #label>
+            <span>备注</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input type="textarea" v-model="formData.remark"></el-input>
         </el-form-item>
       </el-form>
@@ -206,7 +266,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
+
 import axios from '../../utils/axios'
 
 // 搜索相关
@@ -334,6 +394,57 @@ const editDrug = (row) => {
 
 // 保存药品
 const saveDrug = async () => {
+  // 验证所有必填项
+  const missingFields = []
+  
+  if (!formData.drugCode) {
+    missingFields.push('药品编码')
+  }
+  if (!formData.drugName) {
+    missingFields.push('药品名称')
+  }
+  if (!formData.spec) {
+    missingFields.push('规格')
+  }
+  if (!formData.dosageForm) {
+    missingFields.push('剂型')
+  }
+  if (!formData.manufacturer) {
+    missingFields.push('生产厂家')
+  }
+  if (!formData.approvalNumber) {
+    missingFields.push('批准文号')
+  }
+  if (!formData.categoryId) {
+    missingFields.push('药理分类')
+  }
+  if (!formData.manageCategoryId) {
+    missingFields.push('管理分类')
+  }
+  if (!formData.unit) {
+    missingFields.push('单位')
+  }
+  if (formData.purchasePrice === null || formData.purchasePrice === undefined) {
+    missingFields.push('采购价')
+  }
+  if (formData.retailPrice === null || formData.retailPrice === undefined) {
+    missingFields.push('零售价')
+  }
+  if (formData.wholesalePrice === null || formData.wholesalePrice === undefined) {
+    missingFields.push('批发价')
+  }
+  if (formData.minStock === null || formData.minStock === undefined) {
+    missingFields.push('预警阈值')
+  }
+  if (!formData.remark) {
+    missingFields.push('备注')
+  }
+  
+  if (missingFields.length > 0) {
+    ElMessage.error(`请填写以下必填项：${missingFields.join('、')}`)
+    return
+  }
+  
   try {
     if (isEdit.value) {
       await axios.put(`/drugs/${formData.id}`, formData)

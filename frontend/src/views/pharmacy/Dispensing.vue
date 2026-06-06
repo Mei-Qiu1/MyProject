@@ -44,8 +44,8 @@
           </el-table>
           
           <div class="action-bar">
-            <el-button type="primary" @click="confirmDispensing">确认调配</el-button>
-            <el-button type="success" @click="confirmDispense">确认发药</el-button>
+            <el-button v-if="selectedPrescription.status === 2" type="primary" @click="confirmDispensing">确认调配</el-button>
+            <el-button v-if="selectedPrescription.status === 3" type="success" @click="confirmDispense">确认发药</el-button>
           </div>
         </div>
         <div v-else class="empty-tip">
@@ -79,9 +79,11 @@ const selectedPrescription = ref(null)
 
 const loadPending = async () => {
   try {
-    const response = await axios.get('/pharmacy/prescriptions', {
-      params: { status: 2, keyword: keyword.value }
-    })
+    const params = { status: 2 }
+    if (keyword.value && keyword.value.trim()) {
+      params.keyword = keyword.value.trim()
+    }
+    const response = await axios.get('/pharmacy/prescriptions', { params })
     if (response.code === 200) {
       pendingList.value = (response.data.records || response.data).map(p => ({
         ...p,

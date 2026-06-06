@@ -55,7 +55,6 @@
             <el-button type="success" @click="goTo('/special/drugs')">特殊药品管理</el-button>
             <el-button type="warning" @click="goTo('/reports/inventory')">库存报表</el-button>
             <el-button type="info" @click="goTo('/reports/purchase')">采购报表</el-button>
-            <el-button type="default" @click="goTo('/reports/consumption')">消耗报表</el-button>
           </el-space>
         </el-card>
       </el-col>
@@ -71,19 +70,6 @@
                 <el-button size="small" type="primary" @click="openAuditDialog(scope.row)">审批</el-button>
               </template>
             </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card title="特殊药品库存概览">
-          <el-table :data="specialDrugStock" border style="width: 100%">
-            <el-table-column prop="drugName" label="药品名称" />
-            <el-table-column prop="spec" label="规格" />
-            <el-table-column prop="category" label="药品类别" />
-            <el-table-column prop="quantity" label="库存数量" />
-            <el-table-column prop="warehouse" label="存放位置" />
           </el-table>
         </el-card>
       </el-col>

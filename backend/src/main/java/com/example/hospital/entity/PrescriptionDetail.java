@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,9 +27,13 @@ public class PrescriptionDetail {
     private Long drugId;
     private String drugName;
     private String spec;
+    private String unit;
     private Integer quantity;
+    
     @TableField("usage_info")
+    @JsonProperty("usage")
     private String usage;
+    
     private BigDecimal price;
     private BigDecimal amount;
 }

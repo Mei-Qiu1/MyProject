@@ -1,6 +1,7 @@
 package com.example.hospital.controller;
 
 import com.example.hospital.common.Result;
+import com.example.hospital.mapper.DispensingRecordMapper;
 import com.example.hospital.service.PrescriptionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,15 +13,17 @@ import java.util.Map;
 public class DispensingController {
 
     private final PrescriptionService prescriptionService;
+    private final DispensingRecordMapper dispensingRecordMapper;
 
-    public DispensingController(PrescriptionService prescriptionService) {
+    public DispensingController(PrescriptionService prescriptionService, DispensingRecordMapper dispensingRecordMapper) {
         this.prescriptionService = prescriptionService;
+        this.dispensingRecordMapper = dispensingRecordMapper;
     }
 
     @GetMapping("/recent")
     public Result<?> recent() {
-        // 返回最近调配记录（模拟数据）
-        return Result.success(List.of());
+        List<Map<String, Object>> records = dispensingRecordMapper.selectRecentRecords();
+        return Result.success(records);
     }
 
     @PostMapping("/{id}/dispense")

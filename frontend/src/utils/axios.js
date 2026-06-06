@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 const instance = axios.create({
-    baseURL: '/api',    // 替换为你的实际IP
+    baseURL: 'http://localhost:8080/api',
     timeout: 30000
 })
 

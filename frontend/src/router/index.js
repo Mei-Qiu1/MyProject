@@ -37,8 +37,7 @@ const routes = [
       { path: '/special/drugs', name: 'SpecialDrug', component: () => import('../views/special/SpecialDrug.vue') },
       { path: '/reports/inventory', name: 'InventoryReport', component: () => import('../views/reports/InventoryReport.vue') },
       { path: '/reports/purchase', name: 'PurchaseReport', component: () => import('../views/reports/PurchaseReport.vue') },
-      { path: '/reports/consumption', name: 'ConsumptionReport', component: () => import('../views/reports/ConsumptionReport.vue') },
-      { path: '/doctor/dispensing', name: 'DoctorDispensing', component: () => import('../views/doctor/DispensingManage.vue') },
+      { path: '/doctor/dispensing', name: 'DoctorPrescription', component: () => import('../views/doctor/DispensingManage.vue') },
     ]
   }
 ]
@@ -53,37 +52,36 @@ const roleRoutes = {
     '/inventory/list', '/inventory/warning',
     '/pharmacy/prescriptions', '/pharmacy/dispensing',
     '/clinical/orders', '/special/drugs',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/reports/inventory', '/reports/purchase'
   ],
   PHARMACIST: [
     '/dashboard/pharmacist',
     '/pharmacy/prescriptions', '/pharmacy/dispensing', '/pharmacy/delivery',
-    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
-    '/inventory/list', '/inventory/warning',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/drugs/list',
+    '/inventory/list', '/inventory/warning'
   ],
   DOCTOR: [
     '/dashboard/doctor',
-    '/doctor/dispensing',      // 药品调配
-    '/clinical/orders'        // 医嘱管理
+    '/pharmacy/prescriptions',
+    '/drugs/list',
+    '/doctor/dispensing',
+    '/clinical/orders'
   ],
   SPECIAL_PHARMACIST: [
     '/dashboard/special-pharmacist',
     '/special/drugs', 
-    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/drugs/list',
+    '/inventory/list'
   ],
   PURCHASER: [
     '/dashboard/purchaser',
     '/purchase/requests', '/purchase/orders',
-    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/drugs/list', '/drugs/suppliers'
   ],
   STOCK_MANAGER: [
     '/dashboard/stock-manager',
     '/inventory/list', '/inventory/warning',
-    '/drugs/list', '/drugs/categories', '/drugs/suppliers',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/drugs/list'
   ],
   PHARMACY_DIRECTOR: [
     '/dashboard/pharmacy-director',
@@ -91,7 +89,7 @@ const roleRoutes = {
     '/special/drugs',
     '/drugs/list', '/drugs/categories', '/drugs/suppliers',
     '/inventory/list', '/inventory/warning',
-    '/reports/inventory', '/reports/purchase', '/reports/consumption'
+    '/reports/inventory', '/reports/purchase'
   ],
   USER: ['/', '/dashboard/admin']  // 普通用户只能访问首页
 }

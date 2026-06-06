@@ -12,28 +12,24 @@ import java.util.Map;
 @Mapper
 public interface InventoryRecordMapper extends BaseMapper<InventoryRecord> {
 
-    @Select("<script>" +
-            "SELECT COALESCE(SUM(quantity), 0) FROM inventory_record WHERE type = 'OUT' " +
-            "<if test=\"startDate != null and endDate != null\">AND create_time BETWEEN #{startDate} AND #{endDate}</if>" +
-            "</script>")
     Long sumOutQuantity(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    @Select("<script>" +
-            "SELECT COUNT(DISTINCT drug_id) FROM inventory_record WHERE type = 'OUT' " +
-            "<if test=\"startDate != null and endDate != null\">AND create_time BETWEEN #{startDate} AND #{endDate}</if>" +
-            "</script>")
     Long countDistinctDrugs(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    @Select("SELECT COUNT(DISTINCT department) FROM inventory_record WHERE type = 'OUT' AND department IS NOT NULL")
     Long countDistinctDepartments(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Select("SELECT d.drug_name AS drugName, COALESCE(SUM(r.quantity), 0) AS quantity FROM inventory_record r " +
-            "LEFT JOIN drug d ON r.drug_id = d.id WHERE r.type = 'OUT' " +
+            "LEFT JOIN drug d ON r.drug_id = d.id WHERE r.type = 2 " +
             "GROUP BY r.drug_id ORDER BY quantity DESC LIMIT #{limit}")
     List<Map<String, Object>> getDrugConsumptionRanking(@Param("limit") Integer limit);
 
     @Select("SELECT r.department AS departmentName, COALESCE(SUM(r.quantity), 0) AS quantity FROM inventory_record r " +
-            "WHERE r.type = 'OUT' AND r.department IS NOT NULL " +
+            "WHERE r.type = 2 AND r.department IS NOT NULL " +
             "GROUP BY r.department ORDER BY quantity DESC")
     List<Map<String, Object>> getDepartmentConsumptionStats();
+
+    @Select("SELECT DATE_FORMAT(r.create_time, '%Y-%m') AS month, COALESCE(SUM(r.quantity), 0) AS quantity " +
+            "FROM inventory_record r WHERE r.type = 2 " +
+            "GROUP BY DATE_FORMAT(r.create_time, '%Y-%m') ORDER BY month DESC LIMIT 6")
+    List<Map<String, Object>> getConsumptionTrend();
 }

@@ -45,43 +45,87 @@
     
     <el-dialog title="新增/编辑供应商" v-model="showAddModal" width="600px">
       <el-form :model="formData" ref="formRef" label-width="120px">
-        <el-form-item label="供应商编码" prop="supplierCode">
+        <el-form-item prop="supplierCode">
+          <template #label>
+            <span>供应商编码</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.supplierCode"></el-input>
         </el-form-item>
-        <el-form-item label="供应商名称" prop="supplierName">
+        <el-form-item prop="supplierName">
+          <template #label>
+            <span>供应商名称</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.supplierName"></el-input>
         </el-form-item>
-        <el-form-item label="联系人" prop="contactName">
+        <el-form-item prop="contactName">
+          <template #label>
+            <span>联系人</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.contactName"></el-input>
         </el-form-item>
-        <el-form-item label="联系电话" prop="phone">
+        <el-form-item prop="phone">
+          <template #label>
+            <span>联系电话</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.phone"></el-input>
         </el-form-item>
-        <el-form-item label="地址" prop="address">
+        <el-form-item prop="address">
+          <template #label>
+            <span>地址</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input type="textarea" v-model="formData.address"></el-input>
         </el-form-item>
-        <el-form-item label="资质证书号" prop="qualificationNo">
+        <el-form-item prop="qualificationNo">
+          <template #label>
+            <span>资质证书号</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.qualificationNo"></el-input>
         </el-form-item>
-        <el-form-item label="资质有效期" prop="qualificationExpireDate">
+        <el-form-item prop="qualificationExpireDate">
+          <template #label>
+            <span>资质有效期</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-date-picker v-model="formData.qualificationExpireDate" type="date"></el-date-picker>
         </el-form-item>
-        <el-form-item label="银行账户" prop="bankAccount">
+        <el-form-item prop="bankAccount">
+          <template #label>
+            <span>银行账户</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.bankAccount"></el-input>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item prop="status">
+          <template #label>
+            <span>状态</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-select v-model="formData.status" @change="onStatusChange">
             <el-option label="启用" :value="1"></el-option>
             <el-option label="禁用" :value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="合作状态" prop="cooperationStatus">
+        <el-form-item prop="cooperationStatus">
+          <template #label>
+            <span>合作状态</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-select v-model="formData.cooperationStatus" @change="onCooperationStatusChange">
             <el-option label="合作中" :value="1"></el-option>
             <el-option label="暂停合作" :value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item prop="remark">
+          <template #label>
+            <span>备注</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input type="textarea" v-model="formData.remark"></el-input>
         </el-form-item>
       </el-form>
@@ -202,6 +246,48 @@ const deleteSupplier = async (row) => {
 }
 
 const saveSupplier = async () => {
+  // 验证所有必填项
+  const missingFields = []
+  
+  if (!formData.supplierCode) {
+    missingFields.push('供应商编码')
+  }
+  if (!formData.supplierName) {
+    missingFields.push('供应商名称')
+  }
+  if (!formData.contactName) {
+    missingFields.push('联系人')
+  }
+  if (!formData.phone) {
+    missingFields.push('联系电话')
+  }
+  if (!formData.address) {
+    missingFields.push('地址')
+  }
+  if (!formData.qualificationNo) {
+    missingFields.push('资质证书号')
+  }
+  if (!formData.qualificationExpireDate) {
+    missingFields.push('资质有效期')
+  }
+  if (!formData.bankAccount) {
+    missingFields.push('银行账户')
+  }
+  if (!formData.status && formData.status !== 0) {
+    missingFields.push('状态')
+  }
+  if (!formData.cooperationStatus && formData.cooperationStatus !== 0) {
+    missingFields.push('合作状态')
+  }
+  if (!formData.remark) {
+    missingFields.push('备注')
+  }
+  
+  if (missingFields.length > 0) {
+    ElMessage.error(`请填写以下必填项：${missingFields.join('、')}`)
+    return
+  }
+  
   try {
     if (formData.id) {
       await axios.put(`/drugs/suppliers/${formData.id}`, formData)

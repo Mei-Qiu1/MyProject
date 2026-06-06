@@ -5,7 +5,7 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-icon order-icon">
-            <Document />
+            <component :is="'Document'" />
           </div>
           <div class="stat-info">
             <p class="stat-value">{{ todayOrders }}</p>
@@ -16,7 +16,7 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-icon dispensing-icon">
-            <Clock />
+            <component :is="'Clock'" />
           </div>
           <div class="stat-info">
             <p class="stat-value">{{ pendingDispensing }}</p>
@@ -27,7 +27,7 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-icon patient-icon">
-            <User />
+            <component :is="'User'" />
           </div>
           <div class="stat-info">
             <p class="stat-value">{{ patientCount }}</p>
@@ -38,7 +38,7 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-icon drug-icon">
-            <Pill />
+            <component :is="'Pill'" />
           </div>
           <div class="stat-info">
             <p class="stat-value">{{ commonDrugs }}</p>
@@ -72,19 +72,6 @@
         </el-card>
       </el-col>
     </el-row>
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card title="常用药品快速选择">
-          <el-scrollbar style="height: 150px;">
-            <el-space wrap>
-              <el-tag v-for="drug in commonDrugsList" :key="drug.id" closable @close="removeDrug(drug.id)" style="cursor: pointer;" @click="selectDrug(drug)">
-                {{ drug.name }} ({{ drug.spec }})
-              </el-tag>
-            </el-space>
-          </el-scrollbar>
-        </el-card>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
@@ -92,6 +79,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from '../../utils/axios'
+
 
 const router = useRouter()
 const todayOrders = ref(0)
@@ -120,23 +108,32 @@ const removeDrug = (id) => {
 const loadDashboardData = () => {
   axios.get('/dashboard/doctor')
     .then(response => {
-      const data = response.data
-      todayOrders.value = data.todayOrders
-      pendingDispensing.value = data.pendingDispensing
-      patientCount.value = data.patientCount
-      commonDrugs.value = data.commonDrugs
-      orders.value = data.orders || []
-      commonDrugsList.value = data.commonDrugsList || []
+      if (response.code === 200) {
+        const data = response.data
+        todayOrders.value = data.todayOrders || 0
+        pendingDispensing.value = data.pendingDispensing || 0
+        patientCount.value = data.patientCount || 0
+        commonDrugs.value = data.commonDrugs || 0
+        orders.value = data.orders || []
+        commonDrugsList.value = data.commonDrugsList || []
+      } else {
+        console.error('Failed to load dashboard data:', response.message)
+        resetDashboardData()
+      }
     })
     .catch(error => {
       console.error('Failed to load dashboard data:', error)
-      todayOrders.value = 0
-      pendingDispensing.value = 0
-      patientCount.value = 0
-      commonDrugs.value = 0
-      orders.value = []
-      commonDrugsList.value = []
+      resetDashboardData()
     })
+}
+
+const resetDashboardData = () => {
+  todayOrders.value = 0
+  pendingDispensing.value = 0
+  patientCount.value = 0
+  commonDrugs.value = 0
+  orders.value = []
+  commonDrugsList.value = []
 }
 
 onMounted(() => {

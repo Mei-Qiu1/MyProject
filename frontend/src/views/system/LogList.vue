@@ -50,6 +50,16 @@ const pagination = reactive({
   total: 0
 })
 
+// 格式化日期为 YYYY-MM-DD 格式
+const formatDate = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const loadLogs = async () => {
   try {
     const response = await axios.get('/system/logs', {
@@ -57,8 +67,8 @@ const loadLogs = async () => {
         page: pagination.current,
         size: pagination.size,
         keyword: keyword.value,
-        startDate: dateRange.value[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange.value[1]?.format('YYYY-MM-DD')
+        startDate: formatDate(dateRange.value[0]),
+        endDate: formatDate(dateRange.value[1])
       }
     })
     if (response.code === 200) {
@@ -85,8 +95,8 @@ const exportLogs = async () => {
     const response = await axios.get('/system/logs/export', {
       params: {
         keyword: keyword.value,
-        startDate: dateRange.value[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange.value[1]?.format('YYYY-MM-DD')
+        startDate: formatDate(dateRange.value[0]),
+        endDate: formatDate(dateRange.value[1])
       },
       responseType: 'blob'
     })

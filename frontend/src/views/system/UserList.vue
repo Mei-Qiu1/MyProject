@@ -56,22 +56,42 @@
       destroy-on-close
     >
       <el-form :model="formData" ref="formRef" label-width="100px">
-        <el-form-item label="用户名" prop="username">
+        <el-form-item prop="username">
+          <template #label>
+            <span>用户名</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.username" :disabled="isEdit"></el-input>
         </el-form-item>
-        <el-form-item label="姓名" prop="realName">
+        <el-form-item prop="realName">
+          <template #label>
+            <span>姓名</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.realName"></el-input>
         </el-form-item>
-        <el-form-item label="密码" v-if="!isEdit" prop="password">
+        <el-form-item v-if="!isEdit" prop="password">
+          <template #label>
+            <span>密码</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input type="password" v-model="formData.password"></el-input>
         </el-form-item>
-        <el-form-item label="电话" prop="phone">
+        <el-form-item prop="phone">
+          <template #label>
+            <span>电话</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-input v-model="formData.phone"></el-input>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="formData.email"></el-input>
         </el-form-item>
-        <el-form-item label="角色" prop="role">
+        <el-form-item prop="role">
+          <template #label>
+            <span>角色</span>
+            <span style="color:red; margin-left:4px;">*</span>
+          </template>
           <el-select v-model="formData.role">
             <el-option label="系统管理员" value="ADMIN"></el-option>
             <el-option label="药剂科主任" value="PHARMACY_DIRECTOR"></el-option>
@@ -143,7 +163,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
+
 import axios from '../../utils/axios'
 
 const keyword = ref('')
@@ -171,7 +191,7 @@ const formData = reactive({
   password: '',
   phone: '',
   email: '',
-  role: 'USER',
+  role: '',  // 新增时必须选择角色，不默认设置为普通用户
   status: 1  // 默认启用状态
 })
 
@@ -236,7 +256,7 @@ const resetForm = () => {
   formData.password = ''
   formData.phone = ''
   formData.email = ''
-  formData.role = 'USER'
+  formData.role = ''  // 重置时清空角色，必须手动选择
   isEdit.value = false
   dialogTitle.value = '新增用户'
   // 清除验证状态
@@ -289,15 +309,50 @@ const validateEmail = (email) => {
 // 保存用户（新增或编辑）
 const saveUser = async () => {
   try {
+    // 收集未填写的必填项
+    const missingFields = []
+    
+    if (!formData.username) {
+      missingFields.push('用户名')
+    }
+    if (!formData.realName) {
+      missingFields.push('姓名')
+    }
+    if (!isEdit.value && !formData.password) {
+      missingFields.push('密码')
+    }
+    if (!formData.phone) {
+      missingFields.push('电话')
+    }
+    
+    // 如果有未填写的必填项，提示用户
+    if (missingFields.length > 0) {
+      ElMessage.error(`请填写以下必填项：${missingFields.join('、')}`)
+      return
+    }
+    
     // 验证电话格式
     if (!validatePhone(formData.phone)) {
       ElMessage.error('请输入正确的手机号码（11位数字，以1开头）')
       return
     }
     
-    // 验证邮箱格式
-    if (!validateEmail(formData.email)) {
+    // 验证邮箱格式（如果填写了邮箱）
+    if (formData.email && !validateEmail(formData.email)) {
       ElMessage.error('请输入正确的邮箱格式')
+      return
+    }
+    
+    // 验证角色是否选择
+    if (!formData.role) {
+      ElMessage.error('请选择角色')
+      return
+    }
+    
+    // 验证角色是否为有效的角色值（防止普通用户被创建）
+    const validRoles = ['ADMIN', 'PHARMACY_DIRECTOR', 'PHARMACIST', 'PURCHASER', 'DOCTOR', 'STOCK_MANAGER', 'SPECIAL_PHARMACIST']
+    if (!validRoles.includes(formData.role)) {
+      ElMessage.error('请选择有效的角色')
       return
     }
     
@@ -305,10 +360,6 @@ const saveUser = async () => {
       await axios.put(`/system/users/${formData.id}`, formData)
       ElMessage.success('更新成功')
     } else {
-      if (!formData.password) {
-        ElMessage.warning('请输入密码')
-        return
-      }
       await axios.post('/system/users', formData)
       ElMessage.success('创建成功')
     }

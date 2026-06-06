@@ -12,4 +12,5 @@ public interface PrescriptionService {
     void delete(Long id);
     void audit(Long id, Integer status, String comment);
     void dispense(Long id);
+    void returnDrug(Long id);
 }

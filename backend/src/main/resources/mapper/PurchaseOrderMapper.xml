@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.hospital.mapper.PurchaseOrderMapper">
+
+    <select id="selectPageWithNames" resultType="com.example.hospital.entity.PurchaseOrder">
+        SELECT po.*, s.supplier_name AS supplier_name
+        FROM purchase_order po
+        LEFT JOIN supplier s ON po.supplier_id = s.id
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND po.order_no LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="status != null and status > 0">
+            AND po.status = #{status}
+        </if>
+        ORDER BY po.create_time DESC
+    </select>
+
+    <select id="sumAmountByCondition" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE 1=1
+        <if test="supplierId != null and supplierId > 0">
+            AND supplier_id = #{supplierId}
+        </if>
+        <if test="startDate != null and endDate != null">
+            AND create_time BETWEEN #{startDate} AND #{endDate}
+        </if>
+    </select>
+
+</mapper>

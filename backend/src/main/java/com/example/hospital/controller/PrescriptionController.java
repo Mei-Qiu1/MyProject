@@ -64,6 +64,23 @@ public class PrescriptionController {
         return Result.success("调配完成");
     }
 
+    @GetMapping("/{id}/audit-check")
+    public Result<?> auditCheck(@PathVariable Long id) {
+        Prescription prescription = prescriptionService.findById(id);
+        if (prescription == null) {
+            return Result.fail("处方不存在");
+        }
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("warnings", new java.util.ArrayList<>());
+        return Result.success(result);
+    }
+
+    @PostMapping("/{id}/return")
+    public Result<?> returnDrug(@PathVariable Long id) {
+        prescriptionService.returnDrug(id);
+        return Result.success("退药成功");
+    }
+
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         prescriptionService.delete(id);

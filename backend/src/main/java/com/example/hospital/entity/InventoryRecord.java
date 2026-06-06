@@ -31,6 +31,7 @@ public class InventoryRecord {
     private BigDecimal amount;
     private String sourceNo;
     private Long warehouseId;
+    private String department;
     private String remark;
     private Long createBy;
     private LocalDateTime createTime;

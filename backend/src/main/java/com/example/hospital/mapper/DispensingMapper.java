@@ -11,6 +11,6 @@ public interface DispensingMapper extends BaseMapper<Dispensing> {
     @Select("SELECT COUNT(*) FROM drug_delivery WHERE DATE(create_time) = CURDATE()")
     long countTodayDispensing();
 
-    @Select("SELECT COUNT(*) FROM drug_delivery WHERE status = 1")
+    @Select("SELECT COUNT(*) FROM drug_delivery WHERE status = 0")
     long countPendingDispensing();
 }

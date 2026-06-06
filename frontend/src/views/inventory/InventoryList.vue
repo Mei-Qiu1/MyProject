@@ -119,7 +119,7 @@
             <el-option
                 v-for="inv in currentInventories"
                 :key="inv.id"
-                :label="`${inv.batchNo} (剩余: ${inv.quantity} ${inv.unit})`"
+                :label="`${inv.batchNo} (剩余: ${inv.quantity}${inv.unit ? ' ' + inv.unit : ''})`"
                 :value="inv.id"
             />
           </el-select>

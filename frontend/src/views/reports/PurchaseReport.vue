@@ -10,7 +10,6 @@
         </el-select>
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
         <el-button type="primary" @click="refreshReport">刷新报表</el-button>
-        <el-button type="warning" @click="exportReport">导出Excel</el-button>
       </div>
     </div>
     
@@ -47,7 +46,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="deliveryDate" label="预计到货" />
       </el-table>
       <el-pagination
         :current-page="pagination.current"
@@ -189,6 +187,10 @@ const loadDetail = async () => {
     if (supplierId.value !== 0) {
       params.supplierId = supplierId.value
     }
+    if (dateRange.value.length >= 2) {
+      params.startDate = formatDate(dateRange.value[0])
+      params.endDate = formatDate(dateRange.value[1])
+    }
     
     const response = await axios.get('/reports/purchase/detail', { params })
     if (response.code === 200) {
@@ -273,35 +275,6 @@ const loadMockTrend = () => {
 const handlePageChange = (page) => {
   pagination.current = page
   loadDetail()
-}
-
-const handleExport = async () => {
-  try {
-    const params = {
-      supplierId: supplierId.value === 0 ? undefined : supplierId.value
-    }
-    if (dateRange.value.length >= 2) {
-      params.startDate = formatDate(dateRange.value[0])
-      params.endDate = formatDate(dateRange.value[1])
-    }
-    
-    const response = await axios.get('/reports/purchase/export', {
-      params,
-      responseType: 'blob'
-    })
-    const blob = new Blob([response], { type: 'application/vnd.ms-excel' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '采购报表.xlsx'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
-  } catch (error) {
-    ElMessage.error('导出失败')
-  }
 }
 
 onMounted(() => {

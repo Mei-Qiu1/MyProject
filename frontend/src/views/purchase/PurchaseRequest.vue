@@ -282,7 +282,8 @@ const onPlanChange = async (planId) => {
   try {
     const res = await axios.get(`/purchase/requests/plan-details/${planId}`)
     if (res.code === 200) {
-      detailList.value = res.data.map(d => ({
+      // 将计划明细转换为统一格式
+      const newDetails = res.data.map(d => ({
         drugId: d.drugId,
         drugName: d.drugName,
         spec: d.spec,
@@ -291,6 +292,27 @@ const onPlanChange = async (planId) => {
         unitPrice: d.unitPrice,
         amount: d.amount
       }))
+      
+      // 合并重复药品：相同药品的数量相加
+      const mergedDetails = []
+      const drugMap = new Map()
+      
+      // 遍历新的明细
+      newDetails.forEach(item => {
+        const key = `${item.drugId}-${item.spec}`
+        if (drugMap.has(key)) {
+          // 如果已存在，累加数量和金额
+          const existing = drugMap.get(key)
+          existing.quantity += item.quantity
+          existing.amount = (existing.quantity * existing.unitPrice).toFixed(2)
+        } else {
+          // 如果不存在，添加新项
+          drugMap.set(key, { ...item })
+          mergedDetails.push(drugMap.get(key))
+        }
+      })
+      
+      detailList.value = mergedDetails
     } else {
       detailList.value = []
     }

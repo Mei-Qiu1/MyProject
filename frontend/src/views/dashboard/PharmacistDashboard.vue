@@ -65,22 +65,9 @@
             <el-table-column prop="createTime" label="提交时间" />
             <el-table-column label="操作">
               <template #default="scope">
-                <el-button size="small" type="primary">审核</el-button>
+                <el-button size="small" type="primary" @click="handleReview(scope.row)">审核</el-button>
               </template>
             </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card title="库存预警药品">
-          <el-table :data="lowStockDrugs" border style="width: 100%">
-            <el-table-column prop="drugName" label="药品名称" />
-            <el-table-column prop="spec" label="规格" />
-            <el-table-column prop="warehouse" label="仓库" />
-            <el-table-column prop="quantity" label="当前库存" />
-            <el-table-column prop="minStock" label="最低库存" />
           </el-table>
         </el-card>
       </el-col>
@@ -103,6 +90,10 @@ const lowStockDrugs = ref([])
 
 const goTo = (path) => {
   router.push(path)
+}
+
+const handleReview = (prescription) => {
+  router.push(`/pharmacy/prescriptions?prescriptionId=${prescription.id}`)
 }
 
 const loadDashboardData = () => {

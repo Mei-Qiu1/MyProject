@@ -108,29 +108,29 @@
     </el-dialog>
     
     <el-dialog title="新增处方" v-model="showAddModal" width="700px">
-      <el-form :model="formData" ref="formRef" label-width="100px">
-        <el-form-item label="患者姓名" prop="patientName">
+      <el-form :model="formData" ref="formRef" :rules="formRules" label-width="100px">
+        <el-form-item label="患者姓名" prop="patientName" required>
           <el-input v-model="formData.patientName"></el-input>
         </el-form-item>
-        <el-form-item label="患者ID" prop="patientId">
+        <el-form-item label="患者ID" prop="patientId" required>
           <el-input v-model="formData.patientId"></el-input>
         </el-form-item>
-        <el-form-item label="年龄" prop="patientAge">
+        <el-form-item label="年龄" prop="patientAge" required>
           <el-input v-model.number="formData.patientAge"></el-input>
         </el-form-item>
-        <el-form-item label="性别" prop="patientSex">
+        <el-form-item label="性别" prop="patientSex" required>
           <el-select v-model="formData.patientSex">
             <el-option label="男" value="男"></el-option>
             <el-option label="女" value="女"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="科室" prop="department">
+        <el-form-item label="科室" prop="department" required>
           <el-input v-model="formData.department"></el-input>
         </el-form-item>
-        <el-form-item label="医生" prop="doctorName">
+        <el-form-item label="医生" prop="doctorName" required>
           <el-input v-model="formData.doctorName"></el-input>
         </el-form-item>
-        <el-form-item label="处方类型" prop="type">
+        <el-form-item label="处方类型" prop="type" required>
           <el-select v-model="formData.type">
             <el-option label="门诊" :value="1"></el-option>
             <el-option label="住院" :value="2"></el-option>
@@ -220,6 +220,31 @@ const formData = reactive({
   type: 1
 })
 
+const formRules = {
+  patientName: [
+    { required: true, message: '请输入患者姓名', trigger: 'blur' }
+  ],
+  patientId: [
+    { required: true, message: '请输入患者ID', trigger: 'blur' }
+  ],
+  patientAge: [
+    { required: true, message: '请输入年龄', trigger: 'blur' },
+    { type: 'number', min: 0, max: 150, message: '年龄必须在0-150之间', trigger: 'blur' }
+  ],
+  patientSex: [
+    { required: true, message: '请选择性别', trigger: 'change' }
+  ],
+  department: [
+    { required: true, message: '请输入科室', trigger: 'blur' }
+  ],
+  doctorName: [
+    { required: true, message: '请输入医生姓名', trigger: 'blur' }
+  ],
+  type: [
+    { required: true, message: '请选择处方类型', trigger: 'change' }
+  ]
+}
+
 const detailList = ref([])
 
 const statusNames = { 1: '待审核', 2: '已审核', 3: '已调配', 4: '已发药', 5: '已退药', 6: '已拒绝' }
@@ -230,14 +255,17 @@ const getStatusTagType = (status) => statusTagTypes[status] || 'default'
 
 const loadPrescriptions = async () => {
   try {
-    const response = await axios.get('/pharmacy/prescriptions', {
-      params: {
-        page: pagination.current,
-        size: pagination.size,
-        keyword: keyword.value,
-        status: status.value === -1 ? undefined : status.value
-      }
-    })
+    const params = {
+      page: pagination.current,
+      size: pagination.size
+    }
+    if (keyword.value && keyword.value.trim()) {
+      params.keyword = keyword.value.trim()
+    }
+    if (status.value !== -1 && status.value !== undefined) {
+      params.status = status.value
+    }
+    const response = await axios.get('/pharmacy/prescriptions', { params })
     if (response.code === 200) {
       prescriptionList.value = response.data.records
       pagination.total = response.data.total
@@ -376,11 +404,15 @@ const returnDrug = async (row) => {
 }
 
 const savePrescription = async () => {
-  if (detailList.value.length === 0) {
-    ElMessage.warning('请添加药品')
+  if (!formRef.value) {
     return
   }
   try {
+    await formRef.value.validate()
+    if (detailList.value.length === 0) {
+      ElMessage.warning('请添加药品')
+      return
+    }
     await axios.post('/pharmacy/prescriptions', {
       ...formData,
       details: detailList.value
@@ -390,7 +422,9 @@ const savePrescription = async () => {
     loadPrescriptions()
     resetForm()
   } catch (error) {
-    ElMessage.error('保存失败')
+    if (error.name !== 'ElFormValidationError') {
+      ElMessage.error('保存失败')
+    }
   }
 }
 

@@ -8,6 +8,14 @@ import com.example.hospital.entity.*;
 import com.example.hospital.mapper.*;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.hospital.entity.Warehouse;
+import com.example.hospital.mapper.WarehouseMapper;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +35,8 @@ public class ReportController {
     private final PrescriptionMapper prescriptionMapper;
     private final MedicalOrderMapper medicalOrderMapper;
     private final UserMapper userMapper;
+    private final WarehouseMapper warehouseMapper;
+    private final DrugCategoryMapper drugCategoryMapper;
 
     public ReportController(PurchaseOrderMapper purchaseOrderMapper,
                             SupplierMapper supplierMapper,
@@ -35,7 +45,9 @@ public class ReportController {
                             InventoryRecordMapper inventoryRecordMapper,
                             PrescriptionMapper prescriptionMapper,
                             MedicalOrderMapper medicalOrderMapper,
-                            UserMapper userMapper) {
+                            UserMapper userMapper,
+                            WarehouseMapper warehouseMapper,
+                            DrugCategoryMapper drugCategoryMapper) {
         this.purchaseOrderMapper = purchaseOrderMapper;
         this.supplierMapper = supplierMapper;
         this.inventoryMapper = inventoryMapper;
@@ -44,6 +56,8 @@ public class ReportController {
         this.prescriptionMapper = prescriptionMapper;
         this.medicalOrderMapper = medicalOrderMapper;
         this.userMapper = userMapper;
+        this.warehouseMapper = warehouseMapper;
+        this.drugCategoryMapper = drugCategoryMapper;
     }
 
     // 采购报表 - 汇总
@@ -87,13 +101,24 @@ public class ReportController {
     public Result<?> getPurchaseDetail(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) Long supplierId) {
+            @RequestParam(required = false) Long supplierId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        LambdaQueryWrapper<PurchaseOrder> wrapper = new LambdaQueryWrapper<>();
+        if (supplierId != null && supplierId > 0) {
+            wrapper.eq(PurchaseOrder::getSupplierId, supplierId);
+        }
+        if (startDate != null && !startDate.trim().isEmpty()) {
+            wrapper.ge(PurchaseOrder::getCreateTime, LocalDate.parse(startDate).atStartOfDay());
+        }
+        if (endDate != null && !endDate.trim().isEmpty()) {
+            wrapper.le(PurchaseOrder::getCreateTime, LocalDate.parse(endDate).atTime(23, 59, 59));
+        }
 
         IPage<PurchaseOrder> purchaseOrderPage = purchaseOrderMapper.selectPage(
                 new Page<>(page, size),
-                supplierId != null && supplierId > 0
-                        ? new LambdaQueryWrapper<PurchaseOrder>().eq(PurchaseOrder::getSupplierId, supplierId)
-                        : null
+                wrapper
         );
 
         List<Map<String, Object>> records = new ArrayList<>();
@@ -167,128 +192,48 @@ public class ReportController {
         return Result.success(trend);
     }
 
-    // 消耗报表 - 汇总
-    @GetMapping("/consumption/summary")
-    public Result<?> getConsumptionSummary(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
-
-        Long totalQuantity = inventoryRecordMapper.sumOutQuantity(startDate, endDate);
-        Long drugCount = inventoryRecordMapper.countDistinctDrugs(startDate, endDate);
-        Long departmentCount = inventoryRecordMapper.countDistinctDepartments(startDate, endDate);
-        Integer prescriptionCount = prescriptionMapper.countByStatus(3);
-
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("totalQuantity", totalQuantity != null ? totalQuantity : 0);
-        summary.put("drugCount", drugCount != null ? drugCount : 0);
-        summary.put("departmentCount", departmentCount != null ? departmentCount : 0);
-        summary.put("prescriptionCount", prescriptionCount != null ? prescriptionCount.longValue() : 0L);
-
-        return Result.success(summary);
-    }
-
-    // 消耗报表 - 药品排名
-    @GetMapping("/consumption/drug-ranking")
-    public Result<?> getDrugRanking() {
-        List<Map<String, Object>> ranking = inventoryRecordMapper.getDrugConsumptionRanking(10);
-        
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> item : ranking) {
-            Map<String, Object> newItem = new HashMap<>();
-            String drugName = (String) item.get("drugName");
-            newItem.put("drugName", drugName);
-            
-            LambdaQueryWrapper<Drug> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Drug::getDrugName, drugName);
-            Drug drug = drugMapper.selectOne(wrapper);
-            if (drug != null) {
-                newItem.put("spec", drug.getSpec());
-                Long quantity = (Long) item.get("quantity");
-                newItem.put("consumption", quantity);
-                if (drug.getPrice() != null) {
-                    BigDecimal amount = drug.getPrice().multiply(BigDecimal.valueOf(quantity));
-                    newItem.put("amount", amount.doubleValue());
-                } else {
-                    newItem.put("amount", 0);
-                }
-            } else {
-                newItem.put("spec", "");
-                newItem.put("consumption", item.get("quantity"));
-                newItem.put("amount", 0);
-            }
-            result.add(newItem);
-        }
-        
-        return Result.success(result);
-    }
-
-    // 消耗报表 - 科室统计
-    @GetMapping("/consumption/department-stats")
-    public Result<?> getDepartmentStats() {
-        List<Map<String, Object>> stats = inventoryRecordMapper.getDepartmentConsumptionStats();
-        
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> item : stats) {
-            Map<String, Object> newItem = new HashMap<>();
-            newItem.put("departmentName", item.get("departmentName"));
-            newItem.put("consumption", item.get("quantity"));
-            newItem.put("amount", Math.round((Long) item.get("quantity") * 30));
-            result.add(newItem);
-        }
-        
-        return Result.success(result);
-    }
-
-    // 消耗报表 - 医生统计
-    @GetMapping("/consumption/doctor-stats")
-    public Result<?> getDoctorStats() {
-        List<Map<String, Object>> stats = new ArrayList<>();
-
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getRole, "DOCTOR");
-        List<User> doctors = userMapper.selectList(wrapper);
-
-        for (User doctor : doctors) {
-            long orderCount = medicalOrderMapper.countByDateAndDoctor(LocalDate.now().toString(), doctor.getId());
-            if (orderCount == 0) continue;
-
-            Map<String, Object> stat = new HashMap<>();
-            stat.put("doctorName", doctor.getUserName());
-            stat.put("orderCount", orderCount);
-            stat.put("patientCount", orderCount * (1 + Math.random()));
-            stats.add(stat);
-        }
-
-        stats.sort((a, b) -> Long.compare((Long) b.get("orderCount"), (Long) a.get("orderCount")));
-        return Result.success(stats);
-    }
-
-    // 消耗报表 - 趋势
-    @GetMapping("/consumption/trend")
-    public Result<?> getConsumptionTrend() {
-        List<Map<String, Object>> trend = new ArrayList<>();
-        LocalDate now = LocalDate.now();
-
-        for (int i = 5; i >= 0; i--) {
-            YearMonth month = YearMonth.from(now.minusMonths(i));
-            Map<String, Object> item = new HashMap<>();
-            item.put("month", month.getMonthValue() + "月");
-            item.put("quantity", (long) (1000 + Math.random() * 2000));
-            trend.add(item);
-        }
-
-        return Result.success(trend);
-    }
-
     // 库存报表 - 汇总
     @GetMapping("/inventory/summary")
-    public Result<?> getInventorySummary() {
-        Long totalQuantity = inventoryMapper.sumAllQuantity();
-        Long expiringCount = inventoryMapper.countExpiringStock();
-        long totalDrugCount = drugMapper.selectCount(null);
+    public Result<?> getInventorySummary(@RequestParam(required = false) String drugName) {
+        LambdaQueryWrapper<Inventory> inventoryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Drug> drugWrapper = new LambdaQueryWrapper<>();
         
+        List<Long> filteredDrugIds = null;
+        if (drugName != null && !drugName.trim().isEmpty()) {
+            drugWrapper.like(Drug::getDrugName, drugName.trim());
+            List<Drug> drugs = drugMapper.selectList(drugWrapper);
+            if (!drugs.isEmpty()) {
+                filteredDrugIds = drugs.stream().map(Drug::getId).collect(java.util.stream.Collectors.toList());
+                inventoryWrapper.in(Inventory::getDrugId, filteredDrugIds);
+            } else {
+                // 没有匹配的药品，返回空统计
+                Map<String, Object> summary = new HashMap<>();
+                summary.put("totalDrugCount", 0);
+                summary.put("totalQuantity", 0);
+                summary.put("totalAmount", 0);
+                summary.put("expiringCount", 0);
+                return Result.success(summary);
+            }
+        }
+
+        // 计算库存总数量
+        Long totalQuantity = filteredDrugIds != null 
+                ? inventoryMapper.sumQuantityByDrugIds(filteredDrugIds) 
+                : inventoryMapper.sumAllQuantity();
+        
+        // 计算近效期药品数
+        Long expiringCount = filteredDrugIds != null 
+                ? inventoryMapper.countExpiringStockByDrugIds(filteredDrugIds) 
+                : inventoryMapper.countExpiringStock();
+        
+        // 统计药品种类数
+        long totalDrugCount = filteredDrugIds != null 
+                ? filteredDrugIds.size() 
+                : drugMapper.selectCount(null);
+        
+        // 计算总金额
         double totalAmount = 0;
-        List<Inventory> inventories = inventoryMapper.selectList(null);
+        List<Inventory> inventories = inventoryMapper.selectList(inventoryWrapper);
         for (Inventory inv : inventories) {
             Drug drug = drugMapper.selectById(inv.getDrugId());
             if (drug != null && drug.getPrice() != null) {
@@ -323,12 +268,41 @@ public class ReportController {
     @GetMapping("/inventory/detail")
     public Result<?> getInventoryDetail(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String drugName) {
+
+        LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
+        
+        // 如果提供了药品名称，进行模糊搜索
+        if (drugName != null && !drugName.trim().isEmpty()) {
+            // 先查询匹配的药品ID
+            LambdaQueryWrapper<Drug> drugWrapper = new LambdaQueryWrapper<>();
+            drugWrapper.like(Drug::getDrugName, drugName.trim());
+            List<Drug> drugs = drugMapper.selectList(drugWrapper);
+            if (!drugs.isEmpty()) {
+                List<Long> drugIds = drugs.stream().map(Drug::getId).collect(java.util.stream.Collectors.toList());
+                wrapper.in(Inventory::getDrugId, drugIds);
+            } else {
+                // 如果没有匹配的药品，返回空结果
+                Map<String, Object> result = new HashMap<>();
+                result.put("records", new ArrayList<>());
+                result.put("total", 0);
+                return Result.success(result);
+            }
+        }
 
         IPage<Inventory> inventoryPage = inventoryMapper.selectPage(
                 new Page<>(page, size),
-                null
+                wrapper
         );
+
+        // 获取仓库映射
+        Map<Long, String> warehouseMap = warehouseMapper.selectList(null).stream()
+                .collect(java.util.stream.Collectors.toMap(Warehouse::getId, Warehouse::getWarehouseName));
+        
+        // 获取分类映射（优先使用manageCategoryId，其次使用categoryId）
+        Map<Long, String> categoryMap = drugCategoryMapper.selectList(null).stream()
+                .collect(java.util.stream.Collectors.toMap(DrugCategory::getId, DrugCategory::getCategoryName));
 
         List<Map<String, Object>> records = new ArrayList<>();
         for (Inventory inventory : inventoryPage.getRecords()) {
@@ -339,7 +313,9 @@ public class ReportController {
                 item.put("drugCode", drug.getDrugCode());
                 item.put("drugName", drug.getDrugName());
                 item.put("spec", drug.getSpec());
-                item.put("categoryName", drug.getCategoryName());
+                // 优先使用manageCategoryId获取分类名称，其次使用categoryId
+                Long categoryId = drug.getManageCategoryId() != null ? drug.getManageCategoryId() : drug.getCategoryId();
+                item.put("categoryName", categoryMap.getOrDefault(categoryId, ""));
                 item.put("unitPrice", drug.getPrice() != null ? drug.getPrice().doubleValue() : 0);
             } else {
                 item.put("drugCode", "");
@@ -353,7 +329,10 @@ public class ReportController {
                     ? drug.getPrice().multiply(BigDecimal.valueOf(inventory.getQuantity())) 
                     : BigDecimal.ZERO;
             item.put("amount", amount.doubleValue());
-            item.put("warehouseName", inventory.getWarehouseName());
+            
+            // 优先从仓库表获取仓库名称，其次使用inventory中的warehouseName
+            String warehouseName = warehouseMap.getOrDefault(inventory.getWarehouseId(), inventory.getWarehouseName());
+            item.put("warehouseName", warehouseName != null ? warehouseName : "");
             records.add(item);
         }
 

@@ -2,6 +2,7 @@
 package com.example.hospital.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 处方实体类
@@ -33,4 +35,10 @@ public class Prescription {
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    
+    /**
+     * 处方明细（非数据库字段）
+     */
+    @TableField(exist = false)
+    private List<PrescriptionDetail> details;
 }

@@ -370,6 +370,7 @@ CREATE TABLE IF NOT EXISTS prescription_detail (
     drug_id BIGINT NOT NULL,
     drug_name VARCHAR(100),
     spec VARCHAR(100),
+    unit VARCHAR(20),
     quantity INT NOT NULL,
     usage_info VARCHAR(500),
     price DECIMAL(10,2),

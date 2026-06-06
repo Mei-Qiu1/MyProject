@@ -48,6 +48,43 @@ public class UserController {
         this.userMapper = userMapper;
     }
 
+    // ==================== 用户修改自己的密码 ====================
+    @PostMapping("/change-password")
+    public Result<?> changeOwnPassword(@RequestBody Map<String, String> request,
+                                       HttpServletRequest httpRequest) {
+        String oldPassword = request.get("oldPassword");
+        String newPassword = request.get("newPassword");
+
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            return Result.fail("旧密码不能为空");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            return Result.fail("新密码不能为空");
+        }
+
+        // 获取当前登录用户
+        String username = getCurrentUsername();
+        User user = userService.findByUsername(username);
+        
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return Result.fail("旧密码不正确");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdateTime(LocalDateTime.now());
+        userService.update(user);
+
+        logService.save(buildLog("修改密码", "POST",
+                "用户名: " + user.getUsername(),
+                getIpAddress(httpRequest), 1, null));
+
+        return Result.success("密码修改成功");
+    }
+
     // ==================== 用户CRUD ====================
 
     @GetMapping
@@ -270,6 +307,15 @@ public class UserController {
                 if (!phoneTrim.matches("1\\d{10}")) {
                     errorLog.append("第").append(rowNum).append("行电话格式错误；");
                     continue;
+                }
+
+                // 邮箱格式校验（非必填，但如果填写了必须格式正确）
+                if (!isBlank(email)) {
+                    String emailTrim = email.trim();
+                    if (!emailTrim.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
+                        errorLog.append("第").append(rowNum).append("行邮箱格式错误；");
+                        continue;
+                    }
                 }
 
                 String roleCode = null;

@@ -10,10 +10,14 @@ INSERT IGNORE INTO sys_role (role_name, role_code, description, status, create_t
 ('药剂科主任', 'PHARMACY_DIRECTOR', '药剂科负责人，负责采购审批、特殊药品管理和统计报表', 1, NOW(), NOW());
 
 -- 初始化管理员用户（密码：admin123）
--- INSERT INTO sys_user (username, password, real_name, phone, email, role, status, create_time, update_time) VALUES
--- ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '系统管理员', '13800138000', 'admin@hospital.com', 'ADMIN', 1, NOW(), NOW()),
--- ('pharmacist', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张药师', '13800138001', 'pharmacist@hospital.com', 'PHARMACIST', 1, NOW(), NOW()),
--- ('purchaser', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '李采购', '13800138002', 'purchaser@hospital.com', 'PURCHASER', 1, NOW(), NOW());
+INSERT INTO sys_user (username, password, real_name, phone, email, role, status, create_time, update_time) VALUES
+('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '系统管理员', '13800138000', 'admin@hospital.com', 'ADMIN', 1, NOW(), NOW()),
+('pharmacist', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张药师', '13800138001', 'pharmacist@hospital.com', 'PHARMACIST', 1, NOW(), NOW()),
+('purchaser', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '李采购', '13800138002', 'purchaser@hospital.com', 'PURCHASER', 1, NOW(), NOW()),
+('doctor', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '王医生', '13800138003', 'doctor@hospital.com', 'DOCTOR', 1, NOW(), NOW()),
+('special', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '特殊管理员', '13800138004', 'special@hospital.com', 'SPECIAL_PHARMACIST', 1, NOW(), NOW()),
+('stock', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '库存管理员', '13800138005', 'stock@hospital.com', 'STOCK_MANAGER', 1, NOW(), NOW()),
+('director', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '药剂科主任', '13800138006', 'director@hospital.com', 'PHARMACY_DIRECTOR', 1, NOW(), NOW());
 
 -- 初始化药品分类
 INSERT INTO drug_category (category_name, category_code, parent_id, type, sort_order, status, remark, create_time, update_time) VALUES

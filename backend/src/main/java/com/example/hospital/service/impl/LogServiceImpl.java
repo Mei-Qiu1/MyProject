@@ -35,8 +35,9 @@ public class LogServiceImpl implements LogService {
         Page<SysLog> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysLog> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(SysLog::getUsername, keyword).or().like(SysLog::getOperation, keyword);
+            wrapper.and(w -> w.like(SysLog::getUsername, keyword).or().like(SysLog::getOperation, keyword));
         }
+        // 日期范围查询（控制器已处理日期转换）
         if (startDate != null && endDate != null) {
             wrapper.between(SysLog::getCreateTime, startDate, endDate);
         }
@@ -54,8 +55,9 @@ public class LogServiceImpl implements LogService {
         // 1. 查询日志数据
         LambdaQueryWrapper<SysLog> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(SysLog::getUsername, keyword).or().like(SysLog::getOperation, keyword);
+            wrapper.and(w -> w.like(SysLog::getUsername, keyword).or().like(SysLog::getOperation, keyword));
         }
+        // 日期范围查询（控制器已处理日期转换）
         if (startDate != null && endDate != null) {
             wrapper.between(SysLog::getCreateTime, startDate, endDate);
         }

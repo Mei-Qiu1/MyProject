@@ -71,19 +71,7 @@
         </el-card>
       </el-col>
     </el-row>
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="24">
-        <el-card title="临期药品提醒">
-          <el-table :data="expireDrugs" border style="width: 100%">
-            <el-table-column prop="drugName" label="药品名称" />
-            <el-table-column prop="spec" label="规格" />
-            <el-table-column prop="expireDate" label="有效期" />
-            <el-table-column prop="warehouse" label="存放仓库" />
-            <el-table-column prop="quantity" label="数量" />
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
+    
   </div>
 </template>
 
@@ -98,7 +86,6 @@ const warningCount = ref(0)
 const expireWarning = ref(0)
 const warehouseCount = ref(0)
 const warningDrugs = ref([])
-const expireDrugs = ref([])
 
 const goTo = (path) => {
   router.push(path)
@@ -117,7 +104,6 @@ const loadDashboardData = () => {
       expireWarning.value = data.expireWarning
       warehouseCount.value = data.warehouseCount
       warningDrugs.value = data.warningDrugs || []
-      expireDrugs.value = data.expireDrugs || []
     })
     .catch(error => {
       console.error('Failed to load dashboard data:', error)
@@ -126,7 +112,6 @@ const loadDashboardData = () => {
       expireWarning.value = 0
       warehouseCount.value = 0
       warningDrugs.value = []
-      expireDrugs.value = []
     })
 }
 

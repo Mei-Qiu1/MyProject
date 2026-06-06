@@ -116,8 +116,7 @@ const menuTree = ref([
     ]},
   { id: 6, menuName: '统计报表', children: [
       { id: 61, menuName: '库存报表' },
-      { id: 62, menuName: '采购报表' },
-      { id: 63, menuName: '消耗报表' }
+      { id: 62, menuName: '采购报表' }
     ]},
   { id: 7, menuName: '特殊药品', children: [
       { id: 71, menuName: '特殊药品管理' }

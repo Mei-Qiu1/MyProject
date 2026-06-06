@@ -75,23 +75,23 @@
     </el-dialog>
     
     <el-dialog title="新增医嘱" v-model="showAddModal" width="700px">
-      <el-form :model="formData" ref="formRef" label-width="100px">
-        <el-form-item label="患者ID" prop="patientId">
+      <el-form :model="formData" ref="formRef" :rules="formRules" label-width="100px">
+        <el-form-item label="患者ID" prop="patientId" required>
           <el-input v-model="formData.patientId"></el-input>
         </el-form-item>
-        <el-form-item label="患者姓名" prop="patientName">
+        <el-form-item label="患者姓名" prop="patientName" required>
           <el-input v-model="formData.patientName"></el-input>
         </el-form-item>
-        <el-form-item label="科室" prop="department">
+        <el-form-item label="科室" prop="department" required>
           <el-input v-model="formData.department"></el-input>
         </el-form-item>
-        <el-form-item label="床位号" prop="bedNo">
+        <el-form-item label="床位号" prop="bedNo" required>
           <el-input v-model="formData.bedNo"></el-input>
         </el-form-item>
-        <el-form-item label="医生" prop="doctorName">
+        <el-form-item label="医生" prop="doctorName" required>
           <el-input v-model="formData.doctorName"></el-input>
         </el-form-item>
-        <el-form-item label="医嘱类型" prop="type">
+        <el-form-item label="医嘱类型" prop="type" required>
           <el-select v-model="formData.type">
             <el-option label="长期医嘱" :value="1"></el-option>
             <el-option label="临时医嘱" :value="2"></el-option>
@@ -175,6 +175,15 @@ const formData = reactive({
   type: 1
 })
 
+const formRules = {
+  patientId: [{ required: true, message: '请输入患者ID', trigger: 'blur' }],
+  patientName: [{ required: true, message: '请输入患者姓名', trigger: 'blur' }],
+  department: [{ required: true, message: '请输入科室', trigger: 'blur' }],
+  bedNo: [{ required: true, message: '请输入床位号', trigger: 'blur' }],
+  doctorName: [{ required: true, message: '请输入医生姓名', trigger: 'blur' }],
+  type: [{ required: true, message: '请选择医嘱类型', trigger: 'change' }]
+}
+
 const detailList = ref([])
 
 const statusNames = { 1: '待执行', 2: '执行中', 3: '已完成', 4: '已取消' }
@@ -257,7 +266,24 @@ const viewDetail = async (row) => {
   try {
     const response = await axios.get(`/clinical/orders/${row.id}`)
     if (response.code === 200) {
-      Object.assign(detailData, response.data)
+      // 清空原有数据
+      Object.keys(detailData).forEach(key => {
+        delete detailData[key]
+      })
+      const data = response.data
+      // 对details数组进行去重，根据药品ID和规格去重
+      if (data.details && data.details.length > 0) {
+        const seen = new Set()
+        data.details = data.details.filter(item => {
+          const key = `${item.drugId}-${item.spec}`
+          if (seen.has(key)) {
+            return false
+          }
+          seen.add(key)
+          return true
+        })
+      }
+      Object.assign(detailData, data)
       showDetailModal.value = true
     } else {
       ElMessage.error(response.message || '获取医嘱详情失败')
@@ -297,6 +323,7 @@ const saveOrder = async () => {
     return
   }
   try {
+    await formRef.value.validate()
     await axios.post('/clinical/orders', {
       ...formData,
       details: detailList.value
@@ -306,7 +333,9 @@ const saveOrder = async () => {
     loadOrders()
     resetForm()
   } catch (error) {
-    ElMessage.error('保存失败')
+    if (error.name !== 'ValidationError') {
+      ElMessage.error('保存失败')
+    }
   }
 }
 

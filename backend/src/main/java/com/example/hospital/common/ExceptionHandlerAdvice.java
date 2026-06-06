@@ -38,7 +38,9 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleException(Exception ex) {
-        logger.error("系统内部错误: {}", ex.getMessage());
-        return Result.fail("系统内部错误，请稍后重试");
+        // 打印完整的异常堆栈信息，便于排查问题
+        logger.error("系统内部错误", ex);
+        // 返回更详细的错误信息（生产环境应谨慎返回详细信息）
+        return Result.fail("系统内部错误，请稍后重试。错误详情: " + ex.getMessage());
     }
 }

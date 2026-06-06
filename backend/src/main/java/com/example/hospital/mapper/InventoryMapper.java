@@ -32,57 +32,9 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
                                            @Param("warehouseId") Long warehouseId);
 
     // ========== 低库存预警（聚合查询，不区分批次） ==========
-    @Select("<script>" +
-            "SELECT " +
-            "   COALESCE(w.warehouse_name, '无库存') AS warehouseName, " +
-            "   d.drug_code AS drugCode, " +
-            "   d.drug_name AS drugName, " +
-            "   d.spec, " +
-            "   d.unit, " +
-            "   COALESCE(SUM(i.quantity), 0) AS currentStock, " +
-            "   d.min_stock AS minStock, " +
-            "   d.id AS drugId " +
-            "FROM drug d " +
-            "LEFT JOIN inventory i ON d.id = i.drug_id AND i.expire_date > NOW() AND i.quantity > 0 " +
-            "LEFT JOIN warehouse w ON i.warehouse_id = w.id " +
-            "WHERE d.min_stock IS NOT NULL " +
-            "<if test='warehouseId != null'> AND i.warehouse_id = #{warehouseId} </if>" +
-            "GROUP BY d.id, i.warehouse_id, w.warehouse_name " +
-            "HAVING currentStock &lt;= d.min_stock " +
-            "ORDER BY w.warehouse_name, d.drug_name" +
-            "</script>")
     List<Map<String, Object>> findLowStockByWarehouse(@Param("warehouseId") Long warehouseId);
 
     // ========== 效期预警（支持仓库筛选、已过期/即将过期） ==========
-    // 修改：为 batch_no 和 expire_date 添加驼峰别名，便于前端直接使用
-    @Select("<script>" +
-            "SELECT i.id, i.drug_id, " +
-            "   i.batch_no AS batchNo, " +              // 添加别名
-            "   i.quantity, " +
-            "   i.expire_date AS expireDate, " +        // 添加别名
-            "   d.drug_code AS drugCode, " +
-            "   d.drug_name AS drugName, " +
-            "   d.spec, d.unit, " +
-            "   w.warehouse_name AS warehouseName, " +
-            "   w.id AS warehouseId " +
-            "FROM inventory i " +
-            "LEFT JOIN drug d ON i.drug_id = d.id " +
-            "LEFT JOIN warehouse w ON i.warehouse_id = w.id " +
-            "WHERE i.expire_date IS NOT NULL " +
-            "AND i.quantity > 0 " +
-            "<if test='includeExpired == true'>" +
-            "   AND i.expire_date &lt;= DATE_ADD(NOW(), INTERVAL #{days} DAY) " +
-            "</if>" +
-            "<if test='includeExpired == false'>" +
-            "   AND i.expire_date &gt; NOW() " +
-            "   AND i.expire_date &lt;= DATE_ADD(NOW(), INTERVAL #{days} DAY) " +
-            "</if>" +
-            "<if test='keyword != null and keyword != \"\"'>" +
-            "   AND (d.drug_name LIKE CONCAT('%', #{keyword}, '%') OR i.batch_no LIKE CONCAT('%', #{keyword}, '%')) " +
-            "</if>" +
-            "<if test='warehouseId != null'> AND i.warehouse_id = #{warehouseId} </if>" +
-            "ORDER BY i.expire_date ASC" +
-            "</script>")
     List<Map<String, Object>> findExpiringDrugs(@Param("days") Integer days,
                                                 @Param("keyword") String keyword,
                                                 @Param("includeExpired") Boolean includeExpired,
@@ -154,4 +106,8 @@ public interface InventoryMapper extends BaseMapper<Inventory> {
 
     @Select("SELECT w.warehouse_name AS warehouse, COALESCE(SUM(i.quantity), 0) AS quantity FROM inventory i LEFT JOIN warehouse w ON i.warehouse_id = w.id WHERE i.quantity > 0 GROUP BY w.warehouse_name ORDER BY w.warehouse_name")
     List<Map<String, Object>> getInventoryByWarehouse();
+
+    Long sumQuantityByDrugIds(@Param("drugIds") List<Long> drugIds);
+
+    Long countExpiringStockByDrugIds(@Param("drugIds") List<Long> drugIds);
 }

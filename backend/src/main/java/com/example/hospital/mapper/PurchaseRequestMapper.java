@@ -48,24 +48,6 @@ public interface PurchaseRequestMapper extends BaseMapper<PurchaseRequest> {
     IPage<PurchaseRequest> selectPageWithNames(IPage<PurchaseRequest> page,
                                                @Param(Constants.WRAPPER) Wrapper<PurchaseRequest> wrapper);
 
-    @Select("<script>" +
-            "SELECT pr.*, " +
-            "s.supplier_name AS supplier_name, " +
-            "pp.plan_name AS plan_name, " +
-            "COALESCE((SELECT SUM(d.amount) FROM purchase_request_detail d WHERE d.request_id = pr.id), 0) AS total_amount " +
-            "FROM purchase_request pr " +
-            "LEFT JOIN supplier s ON pr.supplier_id = s.id " +
-            "LEFT JOIN purchase_plan pp ON pr.plan_id = pp.id " +
-            "<where> " +
-            "   <if test='keyword != null and keyword != \"\"'> " +
-            "       AND pr.request_no LIKE CONCAT('%', #{keyword}, '%') " +
-            "   </if> " +
-            "   <if test='status != null'> " +
-            "       AND pr.status = #{status} " +
-            "   </if> " +
-            "</where> " +
-            "ORDER BY pr.create_time DESC " +
-            "</script>")
     IPage<PurchaseRequest> selectPageWithConditions(Page<PurchaseRequest> page,
                                                     @Param("keyword") String keyword,
                                                     @Param("status") Integer status);

@@ -253,7 +253,7 @@ public class DashboardController {
                 item.put("drugName", drug != null ? drug.getDrugName() : detail.getDrugName());
                 item.put("quantity", detail.getQuantity());
                 User user = userMapper.selectById(request.getCreateBy());
-                item.put("applicant", user != null ? user.getUserName() : "未知");
+                item.put("applicant", user != null ? (user.getRealName() != null && !user.getRealName().isEmpty() ? user.getRealName() : user.getUserName()) : "未知");
                 item.put("createTime", request.getCreateTime() != null ?
                         request.getCreateTime().format(DateTimeFormatter.ofPattern("HH:mm")) : "-");
                 pendingRequests.add(item);

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.hospital.mapper.InventoryMapper">
+
+    <select id="findLowStockByWarehouse" resultType="map">
+        SELECT
+            COALESCE(w.warehouse_name, 'No Warehouse') AS warehouseName,
+            d.drug_code AS drugCode,
+            d.drug_name AS drugName,
+            d.spec,
+            d.unit,
+            COALESCE(SUM(i.quantity), 0) AS currentStock,
+            d.min_stock AS minStock,
+            d.id AS drugId
+        FROM drug d
+        LEFT JOIN inventory i ON d.id = i.drug_id AND i.expire_date > NOW() AND i.quantity > 0
+        LEFT JOIN warehouse w ON i.warehouse_id = w.id
+        WHERE d.min_stock IS NOT NULL
+        <if test="warehouseId != null">
+            AND i.warehouse_id = #{warehouseId}
+        </if>
+        GROUP BY d.id, i.warehouse_id, w.warehouse_name
+        HAVING currentStock &lt;= d.min_stock
+        ORDER BY w.warehouse_name, d.drug_name
+    </select>
+
+    <select id="findExpiringDrugs" resultType="map">
+        SELECT i.id, i.drug_id,
+            i.batch_no AS batchNo,
+            i.quantity,
+            i.expire_date AS expireDate,
+            d.drug_code AS drugCode,
+            d.drug_name AS drugName,
+            d.spec, d.unit,
+            w.warehouse_name AS warehouseName,
+            w.id AS warehouseId
+        FROM inventory i
+        LEFT JOIN drug d ON i.drug_id = d.id
+        LEFT JOIN warehouse w ON i.warehouse_id = w.id
+        WHERE i.expire_date IS NOT NULL
+        AND i.quantity > 0
+        <if test="includeExpired == true">
+            AND i.expire_date &lt;= DATE_ADD(NOW(), INTERVAL #{days} DAY)
+        </if>
+        <if test="includeExpired == false">
+            AND i.expire_date &gt; NOW()
+            AND i.expire_date &lt;= DATE_ADD(NOW(), INTERVAL #{days} DAY)
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (d.drug_name LIKE CONCAT('%', #{keyword}, '%') OR i.batch_no LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="warehouseId != null">
+            AND i.warehouse_id = #{warehouseId}
+        </if>
+        ORDER BY i.expire_date ASC
+    </select>
+
+    <select id="sumQuantityByDrugIds" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(quantity), 0) FROM inventory WHERE drug_id IN
+        <foreach collection="drugIds" item="drugId" open="(" separator="," close=")">#{drugId}</foreach>
+        AND quantity > 0
+    </select>
+
+    <select id="countExpiringStockByDrugIds" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM inventory WHERE drug_id IN
+        <foreach collection="drugIds" item="drugId" open="(" separator="," close=")">#{drugId}</foreach>
+        AND expire_date &lt;= DATE_ADD(NOW(), INTERVAL 30 DAY) AND quantity > 0
+    </select>
+
+</mapper>

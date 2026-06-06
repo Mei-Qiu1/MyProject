@@ -10,19 +10,6 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface PurchaseOrderMapper extends BaseMapper<PurchaseOrder> {
 
-    @Select("<script>" +
-            "SELECT po.*, s.supplier_name AS supplier_name " +
-            "FROM purchase_order po " +
-            "LEFT JOIN supplier s ON po.supplier_id = s.id " +
-            "WHERE 1=1 " +
-            "<if test=\"keyword != null and keyword != ''\">" +
-            "AND po.order_no LIKE CONCAT('%', #{keyword}, '%') " +
-            "</if>" +
-            "<if test=\"status != null and status > 0\">" +
-            "AND po.status = #{status} " +
-            "</if>" +
-            "ORDER BY po.create_time DESC" +
-            "</script>")
     IPage<PurchaseOrder> selectPageWithNames(IPage<PurchaseOrder> page,
                                              @Param("keyword") String keyword,
                                              @Param("status") Integer status);
@@ -39,11 +26,6 @@ public interface PurchaseOrderMapper extends BaseMapper<PurchaseOrder> {
     @Select("SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')")
     java.math.BigDecimal sumAmountByMonth();
 
-    @Select("<script>" +
-            "SELECT COALESCE(SUM(total_amount), 0) FROM purchase_order WHERE 1=1 " +
-            "<if test=\"supplierId != null and supplierId > 0\">AND supplier_id = #{supplierId}</if> " +
-            "<if test=\"startDate != null and endDate != null\">AND create_time BETWEEN #{startDate} AND #{endDate}</if>" +
-            "</script>")
     java.math.BigDecimal sumAmountByCondition(
             @Param("supplierId") Long supplierId,
             @Param("startDate") String startDate,

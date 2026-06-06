@@ -131,7 +131,7 @@
     </el-dialog>
     
     <el-dialog title="领用申请" v-model="showApplyModal" width="600px">
-      <el-form :model="applyForm" ref="applyFormRef" label-width="100px">
+      <el-form :model="applyForm" ref="applyFormRef" :rules="applyRules" label-width="100px">
         <el-form-item label="药品" prop="drugId">
           <el-select v-model="applyForm.drugId" @change="onDrugChange">
             <el-option v-for="drug in specialDrugs" :key="drug.id" :label="drug.drugName + ' - ' + drug.spec" :value="drug.id"></el-option>
@@ -201,6 +201,22 @@ const currentRecord = ref(null)
 
 const autoGenRecycleNo = computed(() => {
   return 'RC' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + String(Math.random()).slice(-4)
+})
+
+const applyRules = ref({
+  drugId: [
+    { required: true, message: '请选择药品', trigger: 'change' }
+  ],
+  quantity: [
+    { required: true, message: '请输入数量', trigger: 'blur' },
+    { type: 'number', min: 1, message: '数量必须大于0', trigger: 'blur' }
+  ],
+  prescriptionNo: [
+    { required: true, message: '请输入处方号', trigger: 'blur' }
+  ],
+  purpose: [
+    { required: true, message: '请输入用途', trigger: 'blur' }
+  ]
 })
 
 const statusNames = { 1: '待审批', 2: '已批准', 3: '已领用', 4: '已拒绝' }
@@ -279,7 +295,7 @@ const viewDetail = (row) => {
   detailForm.batchNo = row.batchNo || ''
   detailForm.expireDate = row.expireDate || ''
   detailForm.quantity = row.quantity || null
-  detailForm.warehouse = row.warehouse || ''
+  detailForm.warehouse = row.warehouseName || row.warehouse || ''
   showDetailModal.value = true
 }
 
@@ -308,6 +324,12 @@ const submitRecycle = async () => {
 
 const submitApply = async () => {
   try {
+    const valid = await applyFormRef.value.validate()
+    if (!valid) {
+      ElMessage.warning('请填写所有必填项')
+      return
+    }
+    
     await axios.post('/special/drugs/applies', applyForm)
     ElMessage.success('申请提交成功')
     showApplyModal.value = false
@@ -363,5 +385,10 @@ onMounted(() => {
 
 .inventory-section, .records-section, .apply-section {
   padding: 20px 0;
+}
+
+.required-star {
+  color: #f56c6c;
+  margin-right: 4px;
 }
 </style>
