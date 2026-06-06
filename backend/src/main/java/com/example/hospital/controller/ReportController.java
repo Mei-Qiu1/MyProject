@@ -33,6 +33,7 @@ public class ReportController {
     private final DrugMapper drugMapper;
     private final InventoryRecordMapper inventoryRecordMapper;
     private final PrescriptionMapper prescriptionMapper;
+    private final PrescriptionDetailMapper prescriptionDetailMapper;
     private final MedicalOrderMapper medicalOrderMapper;
     private final UserMapper userMapper;
     private final WarehouseMapper warehouseMapper;
@@ -44,6 +45,7 @@ public class ReportController {
                             DrugMapper drugMapper,
                             InventoryRecordMapper inventoryRecordMapper,
                             PrescriptionMapper prescriptionMapper,
+                            PrescriptionDetailMapper prescriptionDetailMapper,
                             MedicalOrderMapper medicalOrderMapper,
                             UserMapper userMapper,
                             WarehouseMapper warehouseMapper,
@@ -54,6 +56,7 @@ public class ReportController {
         this.drugMapper = drugMapper;
         this.inventoryRecordMapper = inventoryRecordMapper;
         this.prescriptionMapper = prescriptionMapper;
+        this.prescriptionDetailMapper = prescriptionDetailMapper;
         this.medicalOrderMapper = medicalOrderMapper;
         this.userMapper = userMapper;
         this.warehouseMapper = warehouseMapper;
@@ -410,5 +413,348 @@ public class ReportController {
         }
         
         return Result.success(abcList);
+    }
+
+    // ==================== 处方统计报表 ====================
+
+    // 处方统计 - 汇总
+    @GetMapping("/prescription/summary")
+    public Result<?> getPrescriptionSummary(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String doctorName) {
+
+        LambdaQueryWrapper<Prescription> wrapper = buildPrescriptionWrapper(startDate, endDate, department, doctorName);
+        long prescriptionCount = prescriptionMapper.selectCount(wrapper);
+
+        // 计算总金额和特殊处方数
+        List<Prescription> prescriptions = prescriptionMapper.selectList(wrapper);
+        double totalAmount = 0;
+        int specialCount = 0;
+        Set<String> patientIds = new HashSet<>();
+        int totalDrugs = 0;
+
+        for (Prescription p : prescriptions) {
+            // 获取处方明细计算金额
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(p.getId());
+            for (PrescriptionDetail detail : details) {
+                if (detail.getAmount() != null) {
+                    totalAmount += detail.getAmount().doubleValue();
+                }
+                totalDrugs++;
+            }
+            if (p.getType() != null && p.getType() == 2) {
+                specialCount++;
+            }
+            if (p.getPatientId() != null) {
+                patientIds.add(p.getPatientId());
+            }
+        }
+
+        double avgDrugsPerPrescription = prescriptionCount > 0 ? Math.round((double) totalDrugs / prescriptionCount * 100) / 100.0 : 0;
+
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("prescriptionCount", prescriptionCount);
+        summary.put("patientCount", patientIds.size());
+        summary.put("totalAmount", Math.round(totalAmount * 100.0) / 100.0);
+        summary.put("avgDrugsPerPrescription", avgDrugsPerPrescription);
+        summary.put("specialPrescriptionCount", specialCount);
+
+        return Result.success(summary);
+    }
+
+    // 处方统计 - 明细
+    @GetMapping("/prescription/detail")
+    public Result<?> getPrescriptionDetail(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String doctorName) {
+
+        LambdaQueryWrapper<Prescription> wrapper = buildPrescriptionWrapper(startDate, endDate, department, doctorName);
+        wrapper.orderByDesc(Prescription::getCreateTime);
+
+        IPage<Prescription> prescriptionPage = prescriptionMapper.selectPage(
+                new Page<>(page, size),
+                wrapper
+        );
+
+        List<Map<String, Object>> records = new ArrayList<>();
+        for (Prescription prescription : prescriptionPage.getRecords()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", prescription.getId());
+            item.put("prescriptionNo", prescription.getPrescriptionNo());
+            item.put("patientName", prescription.getPatientName());
+            item.put("patientSex", prescription.getPatientSex());
+            item.put("patientAge", prescription.getPatientAge());
+            item.put("department", prescription.getDepartment());
+            item.put("doctorName", prescription.getDoctorName());
+            item.put("type", prescription.getType());
+            item.put("status", prescription.getStatus());
+            item.put("createTime", prescription.getCreateTime() != null ? prescription.getCreateTime().toString().substring(0, 19) : "");
+
+            // 计算处方金额和药品数
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(prescription.getId());
+            double totalAmount = 0;
+            for (PrescriptionDetail detail : details) {
+                if (detail.getAmount() != null) {
+                    totalAmount += detail.getAmount().doubleValue();
+                }
+            }
+            item.put("drugCount", details.size());
+            item.put("totalAmount", Math.round(totalAmount * 100.0) / 100.0);
+
+            records.add(item);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", records);
+        result.put("total", prescriptionPage.getTotal());
+
+        return Result.success(result);
+    }
+
+    // 处方统计 - 科室统计
+    @GetMapping("/prescription/department-stats")
+    public Result<?> getPrescriptionDepartmentStats(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        List<Prescription> prescriptions = prescriptionMapper.selectList(null);
+        Map<String, Map<String, Object>> deptStatsMap = new LinkedHashMap<>();
+
+        for (Prescription p : prescriptions) {
+            String dept = p.getDepartment() != null ? p.getDepartment() : "未分类";
+            deptStatsMap.computeIfAbsent(dept, k -> {
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("department", dept);
+                stats.put("prescriptionCount", 0);
+                stats.put("patientCount", 0);
+                stats.put("totalAmount", 0.0);
+                stats.put("totalDrugs", 0);
+                stats.put("specialCount", 0);
+                stats.put("patientIds", new HashSet<String>());
+                return stats;
+            });
+
+            Map<String, Object> stats = deptStatsMap.get(dept);
+            stats.put("prescriptionCount", (int) stats.get("prescriptionCount") + 1);
+            if (p.getPatientId() != null) {
+                ((Set<String>) stats.get("patientIds")).add(p.getPatientId());
+            }
+            if (p.getType() != null && p.getType() == 2) {
+                stats.put("specialCount", (int) stats.get("specialCount") + 1);
+            }
+
+            // 计算金额
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(p.getId());
+            for (PrescriptionDetail detail : details) {
+                if (detail.getAmount() != null) {
+                    stats.put("totalAmount", (double) stats.get("totalAmount") + detail.getAmount().doubleValue());
+                }
+                stats.put("totalDrugs", (int) stats.get("totalDrugs") + 1);
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Object>> entry : deptStatsMap.entrySet()) {
+            Map<String, Object> stats = entry.getValue();
+            Set<String> patientIds = (Set<String>) stats.get("patientIds");
+            int prescriptionCount = (int) stats.get("prescriptionCount");
+            int totalDrugs = (int) stats.get("totalDrugs");
+            double totalAmount = (double) stats.get("totalAmount");
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("department", stats.get("department"));
+            item.put("prescriptionCount", prescriptionCount);
+            item.put("patientCount", patientIds.size());
+            item.put("totalAmount", Math.round(totalAmount * 100.0) / 100.0);
+            item.put("avgAmount", prescriptionCount > 0 ? Math.round(totalAmount / prescriptionCount * 100.0) / 100.0 : 0);
+            item.put("avgDrugsPerPrescription", prescriptionCount > 0 ? Math.round((double) totalDrugs / prescriptionCount * 100.0) / 100.0 : 0);
+            item.put("specialCount", stats.get("specialCount"));
+            result.add(item);
+        }
+
+        result.sort((a, b) -> Integer.compare((int) b.get("prescriptionCount"), (int) a.get("prescriptionCount")));
+        return Result.success(result);
+    }
+
+    // 处方统计 - 医生统计
+    @GetMapping("/prescription/doctor-stats")
+    public Result<?> getPrescriptionDoctorStats(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String department) {
+
+        LambdaQueryWrapper<Prescription> wrapper = new LambdaQueryWrapper<>();
+        if (department != null && !department.trim().isEmpty()) {
+            wrapper.eq(Prescription::getDepartment, department);
+        }
+
+        List<Prescription> prescriptions = prescriptionMapper.selectList(wrapper);
+        Map<Long, Map<String, Object>> doctorStatsMap = new LinkedHashMap<>();
+
+        for (Prescription p : prescriptions) {
+            Long doctorId = p.getDoctorId();
+            if (doctorId == null) continue;
+
+            doctorStatsMap.computeIfAbsent(doctorId, k -> {
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("doctorId", doctorId);
+                stats.put("doctorName", p.getDoctorName());
+                stats.put("department", p.getDepartment());
+                stats.put("prescriptionCount", 0);
+                stats.put("patientCount", 0);
+                stats.put("totalAmount", 0.0);
+                stats.put("totalDrugs", 0);
+                stats.put("specialPrescriptionCount", 0);
+                stats.put("patientIds", new HashSet<String>());
+                return stats;
+            });
+
+            Map<String, Object> stats = doctorStatsMap.get(doctorId);
+            stats.put("prescriptionCount", (int) stats.get("prescriptionCount") + 1);
+            if (p.getPatientId() != null) {
+                ((Set<String>) stats.get("patientIds")).add(p.getPatientId());
+            }
+            if (p.getType() != null && p.getType() == 2) {
+                stats.put("specialPrescriptionCount", (int) stats.get("specialPrescriptionCount") + 1);
+            }
+
+            // 计算金额
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(p.getId());
+            for (PrescriptionDetail detail : details) {
+                if (detail.getAmount() != null) {
+                    stats.put("totalAmount", (double) stats.get("totalAmount") + detail.getAmount().doubleValue());
+                }
+                stats.put("totalDrugs", (int) stats.get("totalDrugs") + 1);
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Long, Map<String, Object>> entry : doctorStatsMap.entrySet()) {
+            Map<String, Object> stats = entry.getValue();
+            Set<String> patientIds = (Set<String>) stats.get("patientIds");
+            int prescriptionCount = (int) stats.get("prescriptionCount");
+            int totalDrugs = (int) stats.get("totalDrugs");
+            double totalAmount = (double) stats.get("totalAmount");
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("doctorId", stats.get("doctorId"));
+            item.put("doctorName", stats.get("doctorName"));
+            item.put("department", stats.get("department"));
+            item.put("prescriptionCount", prescriptionCount);
+            item.put("patientCount", patientIds.size());
+            item.put("totalAmount", Math.round(totalAmount * 100.0) / 100.0);
+            item.put("avgDrugsPerPrescription", prescriptionCount > 0 ? Math.round((double) totalDrugs / prescriptionCount * 100.0) / 100.0 : 0);
+            item.put("specialPrescriptionCount", stats.get("specialPrescriptionCount"));
+            result.add(item);
+        }
+
+        result.sort((a, b) -> Integer.compare((int) b.get("prescriptionCount"), (int) a.get("prescriptionCount")));
+        return Result.success(result);
+    }
+
+    // 处方统计 - 药品使用排行
+    @GetMapping("/prescription/drug-usage")
+    public Result<?> getPrescriptionDrugUsage(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        List<Prescription> prescriptions = prescriptionMapper.selectList(null);
+        Map<Long, Map<String, Object>> drugStatsMap = new LinkedHashMap<>();
+
+        for (Prescription p : prescriptions) {
+            List<PrescriptionDetail> details = prescriptionDetailMapper.selectByPrescriptionId(p.getId());
+
+            for (PrescriptionDetail detail : details) {
+                Long drugId = detail.getDrugId();
+                if (drugId == null) continue;
+
+                drugStatsMap.computeIfAbsent(drugId, k -> {
+                    Map<String, Object> stats = new HashMap<>();
+                    stats.put("drugId", drugId);
+                    stats.put("drugName", detail.getDrugName());
+                    stats.put("spec", detail.getSpec());
+                    stats.put("prescriptionCount", 0);
+                    stats.put("totalQuantity", 0);
+                    stats.put("totalAmount", 0.0);
+                    stats.put("patientIds", new HashSet<String>());
+                    return stats;
+                });
+
+                Map<String, Object> stats = drugStatsMap.get(drugId);
+                stats.put("prescriptionCount", (int) stats.get("prescriptionCount") + 1);
+                stats.put("totalQuantity", (int) stats.get("totalQuantity") + (detail.getQuantity() != null ? detail.getQuantity() : 0));
+                if (detail.getAmount() != null) {
+                    stats.put("totalAmount", (double) stats.get("totalAmount") + detail.getAmount().doubleValue());
+                }
+                if (p.getPatientId() != null) {
+                    ((Set<String>) stats.get("patientIds")).add(p.getPatientId());
+                }
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Long, Map<String, Object>> entry : drugStatsMap.entrySet()) {
+            Map<String, Object> stats = entry.getValue();
+            Map<String, Object> item = new HashMap<>();
+            item.put("drugId", stats.get("drugId"));
+            item.put("drugName", stats.get("drugName"));
+            item.put("spec", stats.get("spec"));
+            item.put("prescriptionCount", stats.get("prescriptionCount"));
+            item.put("totalQuantity", stats.get("totalQuantity"));
+            item.put("totalAmount", Math.round((double) stats.get("totalAmount") * 100.0) / 100.0);
+            item.put("patientCount", ((Set<String>) stats.get("patientIds")).size());
+            result.add(item);
+        }
+
+        result.sort((a, b) -> Integer.compare((int) b.get("totalQuantity"), (int) a.get("totalQuantity")));
+        return Result.success(result);
+    }
+
+    // 处方统计 - 月度趋势
+    @GetMapping("/prescription/trend")
+    public Result<?> getPrescriptionTrend() {
+        List<Map<String, Object>> trend = new ArrayList<>();
+        LocalDate now = LocalDate.now();
+
+        for (int i = 5; i >= 0; i--) {
+            YearMonth month = YearMonth.from(now.minusMonths(i));
+            String monthStr = month.getMonthValue() + "月";
+
+            LambdaQueryWrapper<Prescription> wrapper = new LambdaQueryWrapper<>();
+            wrapper.ge(Prescription::getCreateTime, month.atDay(1).atStartOfDay());
+            wrapper.le(Prescription::getCreateTime, month.atEndOfMonth().atTime(23, 59, 59));
+            long count = prescriptionMapper.selectCount(wrapper);
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("month", monthStr);
+            item.put("count", count);
+            trend.add(item);
+        }
+
+        return Result.success(trend);
+    }
+
+    // 构建处方查询条件
+    private LambdaQueryWrapper<Prescription> buildPrescriptionWrapper(String startDate, String endDate, String department, String doctorName) {
+        LambdaQueryWrapper<Prescription> wrapper = new LambdaQueryWrapper<>();
+        if (startDate != null && !startDate.trim().isEmpty()) {
+            wrapper.ge(Prescription::getCreateTime, LocalDate.parse(startDate).atStartOfDay());
+        }
+        if (endDate != null && !endDate.trim().isEmpty()) {
+            wrapper.le(Prescription::getCreateTime, LocalDate.parse(endDate).atTime(23, 59, 59));
+        }
+        if (department != null && !department.trim().isEmpty()) {
+            wrapper.eq(Prescription::getDepartment, department);
+        }
+        if (doctorName != null && !doctorName.trim().isEmpty()) {
+            wrapper.like(Prescription::getDoctorName, doctorName);
+        }
+        return wrapper;
     }
 }

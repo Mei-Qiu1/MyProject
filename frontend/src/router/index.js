@@ -37,6 +37,7 @@ const routes = [
       { path: '/special/drugs', name: 'SpecialDrug', component: () => import('../views/special/SpecialDrug.vue') },
       { path: '/reports/inventory', name: 'InventoryReport', component: () => import('../views/reports/InventoryReport.vue') },
       { path: '/reports/purchase', name: 'PurchaseReport', component: () => import('../views/reports/PurchaseReport.vue') },
+      { path: '/reports/prescription', name: 'PrescriptionReport', component: () => import('../views/reports/PrescriptionReport.vue') },
       { path: '/doctor/dispensing', name: 'DoctorPrescription', component: () => import('../views/doctor/DispensingManage.vue') },
     ]
   }
@@ -52,7 +53,7 @@ const roleRoutes = {
     '/inventory/list', '/inventory/warning',
     '/pharmacy/prescriptions', '/pharmacy/dispensing',
     '/clinical/orders', '/special/drugs',
-    '/reports/inventory', '/reports/purchase'
+    '/reports/inventory', '/reports/purchase', '/reports/prescription'
   ],
   PHARMACIST: [
     '/dashboard/pharmacist',
@@ -89,7 +90,7 @@ const roleRoutes = {
     '/special/drugs',
     '/drugs/list', '/drugs/categories', '/drugs/suppliers',
     '/inventory/list', '/inventory/warning',
-    '/reports/inventory', '/reports/purchase'
+    '/reports/inventory', '/reports/purchase', '/reports/prescription'
   ],
   USER: ['/', '/dashboard/admin']  // 普通用户只能访问首页
 }

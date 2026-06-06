@@ -106,6 +106,7 @@
             </template>
             <el-menu-item index="/reports/inventory">库存报表</el-menu-item>
             <el-menu-item index="/reports/purchase">采购报表</el-menu-item>
+            <el-menu-item index="/reports/prescription">处方统计报表</el-menu-item>
           </el-sub-menu>
         </template>
       </el-menu>
