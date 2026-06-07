@@ -140,11 +140,21 @@ public class SpecialDrugServiceImpl implements SpecialDrugService {
     @Override
     @Transactional
     public void saveApply(Map<String, Object> apply) {
+        Long drugId = Long.valueOf(apply.get("drugId").toString());
+        // 校验药品是否存在且为特殊药品
+        Drug drug = drugMapper.selectById(drugId);
+        if (drug == null) {
+            throw new IllegalArgumentException("药品不存在");
+        }
+        if (drug.getIsSpecial() == null || drug.getIsSpecial() != 1) {
+            throw new IllegalArgumentException("只能申请特殊药品");
+        }
+        // 其余代码保持不变...
         SpecialDrugApply record = new SpecialDrugApply();
         String applyNo = "SA" + System.currentTimeMillis();
         record.setApplyNo(applyNo);
-        record.setDrugId(Long.valueOf(apply.get("drugId").toString()));
-        record.setDrugName((String) apply.get("drugName"));
+        record.setDrugId(drugId);
+        record.setDrugName(drug.getDrugName()); // 直接从数据库取，不信任前端传值
         record.setQuantity(Integer.valueOf(apply.get("quantity").toString()));
         record.setPrescriptionNo((String) apply.get("prescriptionNo"));
         record.setPurpose((String) apply.get("purpose"));

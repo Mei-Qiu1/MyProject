@@ -329,7 +329,13 @@ const submitApply = async () => {
       ElMessage.warning('请填写所有必填项')
       return
     }
-    
+
+    const selectedDrug = specialDrugs.value.find(d => d.id === applyForm.drugId);
+    if (!selectedDrug || selectedDrug.isSpecial !== 1) {
+      ElMessage.error('只能选择特殊药品');
+      return
+    }
+
     await axios.post('/special/drugs/applies', applyForm)
     ElMessage.success('申请提交成功')
     showApplyModal.value = false

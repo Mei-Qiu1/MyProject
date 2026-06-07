@@ -54,7 +54,7 @@ public class DrugServiceImpl implements DrugService {
     }
 
     @Override
-    public IPage<Drug> list(int page, int size, String keyword, Long categoryId, Long manageCategoryId) {
+    public IPage<Drug> list(int page, int size, String keyword, Long categoryId, Long manageCategoryId, Integer isSpecial) {
         Page<Drug> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Drug> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
@@ -65,6 +65,9 @@ public class DrugServiceImpl implements DrugService {
         }
         if (manageCategoryId != null) {
             wrapper.eq(Drug::getManageCategoryId, manageCategoryId);
+        }
+        if (isSpecial != null) {
+            wrapper.eq(Drug::getIsSpecial, isSpecial);
         }
         wrapper.orderByDesc(Drug::getCreateTime);
         return drugMapper.selectPage(pageParam, wrapper);

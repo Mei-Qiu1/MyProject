@@ -37,13 +37,15 @@ public class DrugController {
         this.drugCategoryMapper = drugCategoryMapper;
     }
 
+    // 在 DrugController.java 中修改 list 方法
     @GetMapping
     public Result<?> list(@RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(required = false) String keyword,
                           @RequestParam(required = false) Long categoryId,
-                          @RequestParam(required = false) Long manageCategoryId) {
-        IPage<Drug> drugPage = drugService.list(page, size, keyword, categoryId, manageCategoryId);
+                          @RequestParam(required = false) Long manageCategoryId,
+                          @RequestParam(required = false) Integer isSpecial) {  // 新增
+        IPage<Drug> drugPage = drugService.list(page, size, keyword, categoryId, manageCategoryId, isSpecial);
         return Result.success(PageResult.of(drugPage.getRecords(), drugPage.getTotal(),
                 (int) drugPage.getCurrent(), (int) drugPage.getSize()));
     }

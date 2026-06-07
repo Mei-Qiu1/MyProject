@@ -19,7 +19,7 @@ public interface DrugService {
 
     void delete(Long id);
 
-    IPage<Drug> list(int page, int size, String keyword, Long categoryId, Long manageCategoryId);
+    IPage<Drug> list(int page, int size, String keyword, Long categoryId, Long manageCategoryId, Integer isSpecial);
 
     void updateStatus(Long id, Integer status);
 
